@@ -1,0 +1,212 @@
+<mxfile host="app.diagrams.net" agent="p2p-ai-langraph mini-lab" version="22.1.0">
+  <diagram id="hex" name="1. Hexagonal architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t1" value="Mini-lab — hexagonal architecture" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="560" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="t1s" value="Core never imports Postgres, Redis, or OpenAI. Three ports only. Adapters swap (memory tests / Postgres worker)." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="900" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="drv" value="Driving adapters — inbound" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="260" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="curl / TestClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="drv">
+          <mxGeometry x="20" y="50" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="FastAPI&#xa;POST /ingest · GET /tickets/{id}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="drv">
+          <mxGeometry x="20" y="120" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="hexg" value="Core — vendor-agnostic" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=#fff2cc;strokeColor=#d6b656;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="90" width="520" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="dom" value="Domain&#xa;IncomingEmail · Ticket · TicketStatus&#xa;WorkflowDeps" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="hexg">
+          <mxGeometry x="30" y="50" width="460" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="uc1" value="LangGraph&#xa;ingest → security → triage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hexg">
+          <mxGeometry x="30" y="150" width="460" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ports" value="Ports — contracts" style="swimlane;fontStyle=1;startSize=28;fillColor=#e1d5e7;strokeColor=#9673a6;rounded=1;" vertex="1" parent="hexg">
+          <mxGeometry x="30" y="240" width="460" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" value="EmailPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="ports">
+          <mxGeometry x="20" y="50" width="200" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="TicketStorePort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="ports">
+          <mxGeometry x="240" y="50" width="200" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="LLMPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="ports">
+          <mxGeometry x="20" y="110" width="200" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="pnote" value="Triage does not import openai.&#xa;Ingest does not import SQLModel." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#555555;" vertex="1" parent="ports">
+          <mxGeometry x="20" y="170" width="420" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="outg" value="Driven adapters — outbound" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="90" width="280" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="o1" value="MockEmailAdapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="outg">
+          <mxGeometry x="20" y="50" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="o2" value="MockLLMAdapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="outg">
+          <mxGeometry x="20" y="115" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="o3" value="Postgres tickets (Alembic)&#xa;or InMemoryTicketStore" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="outg">
+          <mxGeometry x="20" y="180" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="drv" target="hexg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="hexg" target="outg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="graph" name="2. LangGraph three nodes">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t2" value="Mini-lab — LangGraph (ingest → security → triage)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="720" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="t2s" value="Cap = first LLM node. No Thread, Intent, HITL, Send. Red = early stop." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="700" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="POST /ingest" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="400" y="90" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n1" value="1 · Ingest&#xa;EmailPort + save Ticket OPEN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="360" y="180" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n1d" value="ids ok&#xa;not duplicate?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="385" y="270" width="170" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rej" value="STOP&#xa;reject / duplicate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="80" y="280" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n0" value="0 · Security&#xa;domain whitelist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="360" y="390" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n0d" value="Sender&#xa;accepted?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="385" y="480" width="170" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="quar" value="STOP&#xa;QUARANTINED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="80" y="490" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" value="2 · Triage · first LLM&#xa;LLMPort · is_ap + confidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="360" y="600" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n2d" value="AP?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="395" y="690" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="disc" value="STOP&#xa;DISCARDED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="80" y="700" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="open" value="END · ticket OPEN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="640" y="700" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" target="n1" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="n1" target="n1d" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="n1d" target="rej" style="endArrow=block;endFill=1;" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="n1d" target="n0" style="endArrow=block;endFill=1;" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="n0" target="n0d" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="n0d" target="quar" style="endArrow=block;endFill=1;" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="n0d" target="n2" style="endArrow=block;endFill=1;" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="n2" target="n2d" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="n2d" target="disc" style="endArrow=block;endFill=1;" value="no + high conf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="n2d" target="open" style="endArrow=block;endFill=1;" value="yes / uncertain">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="runtime" name="3. Request queue worker DB">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t3" value="Mini-lab — runtime path (the piece to feel by hand)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="800" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="t3s" value="FastAPI only enqueues. LangGraph runs inside the Celery worker. GET reads Postgres." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="800" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="c" value="curl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="FastAPI&#xa;POST /ingest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="200" y="190" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis&#xa;Celery broker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="400" y="190" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="w" value="Celery worker&#xa;process_email" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="600" y="190" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="g" value="LangGraph&#xa;3 nodes + ports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="820" y="190" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pg" value="Postgres&#xa;tickets (Alembic)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="175" width="140" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="get" value="GET /tickets/{id}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="360" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" edge="1" parent="1" source="c" target="api" style="endArrow=block;endFill=1;" value="JSON">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" edge="1" parent="1" source="api" target="redis" style="endArrow=block;endFill=1;" value=".delay">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" edge="1" parent="1" source="redis" target="w" style="endArrow=block;endFill=1;" value="task">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r4" edge="1" parent="1" source="w" target="g" style="endArrow=block;endFill=1;" value="invoke">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r5" edge="1" parent="1" source="g" target="pg" style="endArrow=block;endFill=1;" value="save_ticket">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r6" edge="1" parent="1" source="c" target="get" style="endArrow=block;endFill=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="90" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r7" edge="1" parent="1" source="get" target="pg" style="endArrow=block;endFill=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270" y="480" />
+              <mxPoint x="1110" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note" value="202 is returned before the graph runs. Alembic must have created tickets first." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="40" y="540" width="700" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
