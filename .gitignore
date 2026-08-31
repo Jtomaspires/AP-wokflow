@@ -1,0 +1,18 @@
+# Bytecode — Python cria __pycache__/ sozinho ao correr código; não commits
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Virtualenv
+.venv/
+venv/
+
+# Secrets — guarda .env.dev no git, ignora .env local
+.env
+.env.local
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
