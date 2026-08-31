@@ -1,0 +1,35 @@
+services:                          # lista de contentores que o Compose gere
+  db:                              # nome do serviço (referência interna; podes manter "db")
+    image: postgres:16-alpine      # IGUAL — mesma imagem Postgres
+    environment:                   # variáveis que o Postgres lê no 1.º boot
+      POSTGRES_DB: lab             # ALTERAR — nome da base (antes p2p)
+      POSTGRES_USER: lab           # ALTERAR — user (antes p2p)
+      POSTGRES_PASSWORD: lab_dev   # ALTERAR — password (antes p2p_dev)
+    ports:
+      - "5434:5432"                # ALTERAR — host 5434 → contentor 5432
+                                   #   (P2P usa 5433; assim os dois podem correr)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # IGUAL — dados em volume Docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d lab"]  # ALTERAR — user e db = lab
+      interval: 5s                 # IGUAL — testa de 5 em 5s
+      timeout: 5s                  # IGUAL
+      retries: 10                  # IGUAL
+      start_period: 5s             # IGUAL — tempo de graça ao arrancar
+
+  redis:                           # 2.º serviço
+    image: redis:7-alpine          # IGUAL
+    ports:
+      - "6380:6379"                # ALTERAR — host 6380 → contentor 6379
+                                   #   (P2P usa 6379; evita conflito)
+    volumes:
+      - redis_data:/data           # IGUAL
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]  # IGUAL — não usa user/db
+      interval: 5s                 # IGUAL
+      timeout: 3s                  # IGUAL
+      retries: 10                  # IGUAL
+
+volumes:                           # declara os volumes usados acima
+  postgres_data:                   # IGUAL — volume nomeado para Postgres
+  redis_data:                      # IGUAL — volume nomeado para Redis
