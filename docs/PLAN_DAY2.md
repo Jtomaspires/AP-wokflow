@@ -4,7 +4,7 @@
 >
 > Escreve os nós tu. Abre `ingestion.py` / `security.py` / `triage.py` no P2P, percebe os caminhos, reimplementa como funções `(state) -> dict` (updates).
 
-**Status:** aberto.
+**Status:** em curso — ingest + security feitos (só whitelist, sem SPF/DKIM); próximo: triage.
 
 ---
 
@@ -19,7 +19,7 @@ START → ingest → security → triage → END
 
 LangGraph: `add_conditional_edges` quando `should_stop` (ou status terminal). Não copies `BaseRouter`.
 
-Estado sugerido (`app/graph/state.py`): `raw_payload`, `event` (opcional), `ticket_id` ou ticket serializado, `should_stop: bool`, campos que precisares. **Não** metas `deps` no state (não serializa bem) — `build_graph(deps)` fecha `deps` nas funções dos nós, como `TicketWorkflow(deps)`.
+Estado (`app/graph/state.py`): `raw_payload`, `ticket_id`, `should_stop`, `stop_reason`. **Não** metas `deps` no state (não serializa bem) — `make_*_node(deps)` / `build_graph(deps)` fecham `deps` nas funções dos nós.
 
 ---
 
@@ -27,17 +27,17 @@ Estado sugerido (`app/graph/state.py`): `raw_payload`, `event` (opcional), `tick
 
 Referência: `p2p-ai-assistant/app/workflow/nodes/ingestion.py`
 
-- [ ] `deps.email.parse_webhook(raw_payload)` → `IncomingEmail`
-- [ ] Sem `message_id` ou `thread_id` → `should_stop=True`, **não** crias ticket (ou crias e marcas rejeitado — escolhe uma e documenta)
-- [ ] `get_by_message_id` → duplicado → stop, reutiliza o ticket existente
-- [ ] Senão: constrói `Ticket(status=open)`, `save_ticket`
-- [ ] Devolve update do state com `ticket_id` / dados necessários
+- [x] `deps.email.parse_webhook(raw_payload)` → `IncomingEmail`
+- [x] Sem `message_id` ou `thread_id` → `should_stop=True`, **não** crias ticket
+- [x] `get_by_message_id` → duplicado → stop, reutiliza o ticket existente
+- [x] Senão: constrói `Ticket(status=open)`, `save_ticket`
+- [x] Devolve update do state com `ticket_id` / `stop_reason`
 
 Testes (`tests/test_node_ingest.py`) com **memory store** + mock email:
 
-- payload válido → ticket OPEN na store
-- mesmo `message_id` duas vezes → não cria segundo
-- falta `thread_id` → stop
+- [x] payload válido → ticket OPEN na store
+- [x] mesmo `message_id` duas vezes → não cria segundo
+- [x] falta `thread_id` → stop
 
 ---
 
@@ -45,17 +45,17 @@ Testes (`tests/test_node_ingest.py`) com **memory store** + mock email:
 
 Referência: `security.py` no P2P. Versão **reduzida** aceite:
 
-- [ ] Se `SECURITY_CHECK_ENABLED=False` → passa (grava ticket se quiseres)
-- [ ] Extrai domínio do `from_email`
-- [ ] Se domínio **não** está em `SENDER_DOMAIN_WHITELIST` → `status=quarantined`, `save_ticket`, `should_stop=True`
-- [ ] Caso contrário → passa para triagem
-- [ ] SPF/DKIM: opcional (se implementares, copia a ideia do P2P; se não, documenta “só whitelist”)
+- [x] Se `SECURITY_CHECK_ENABLED=False` → passa, ticket fica OPEN
+- [x] Extrai domínio do `sender_email` do ticket
+- [x] Se domínio **não** está em `SENDER_DOMAIN_WHITELIST` → `status=quarantined`, `save_ticket`, `should_stop=True`
+- [x] Caso contrário → passa para triagem
+- [x] SPF/DKIM: **não** — só whitelist (`app/graph/nodes/security.py`)
 
-Testes:
+Testes (`tests/test_node_security.py`):
 
-- domínio na whitelist → continua, ticket OPEN
-- domínio fora + flag on → QUARANTINED, stop
-- flag off → passa mesmo fora da lista
+- [x] domínio na whitelist → continua, ticket OPEN
+- [x] domínio fora + flag on → QUARANTINED, stop
+- [x] flag off → passa mesmo fora da lista
 
 ---
 
