@@ -4,7 +4,7 @@
 >
 > Escreve os nós tu. Abre `ingestion.py` / `security.py` / `triage.py` no P2P, percebe os caminhos, reimplementa como funções `(state) -> dict` (updates).
 
-**Status:** em curso — ingest + security + triage feitos (nós async no triage; grafo ainda não compilado); próximo: `build_graph`.
+**Status:** em curso — grafo compilado (`ainvoke`); próximo: Celery `process_email`.
 
 ---
 
@@ -80,17 +80,17 @@ Testes (`tests/test_node_triage.py`):
 
 ## Compilar o grafo (`app/graph/app.py`)
 
-- [ ] `StateGraph(LabState)`
-- [ ] `add_node` ingest, security, triage
-- [ ] edges + conditionais em `should_stop` / status
-- [ ] `compile()`
-- [ ] `build_graph(deps) -> compiled graph`
+- [x] `StateGraph(LabState)`
+- [x] `add_node` ingest, security, triage
+- [x] edges + conditionais em `should_stop`
+- [x] `compile()`
+- [x] `build_graph(deps) -> compiled graph`
 
 Teste de integração **sem Celery** (`tests/test_graph.py`):
 
-- email ACME (domínio whitelist) + mock LLM `is_ap=True` → ticket OPEN
-- email domínio estranho + security on → QUARANTINED, triage **não** corre (assert: mock LLM `calls` vazio)
-- AP false alta confiança → DISCARDED
+- [x] email ACME (domínio whitelist) + mock LLM `is_ap=True` → ticket OPEN
+- [x] email domínio estranho + security on → QUARANTINED, triage **não** corre (`llm.calls` vazio)
+- [x] AP false alta confiança → DISCARDED
 
 ---
 
