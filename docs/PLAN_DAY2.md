@@ -4,7 +4,7 @@
 >
 > Escreve os nós tu. Abre `ingestion.py` / `security.py` / `triage.py` no P2P, percebe os caminhos, reimplementa como funções `(state) -> dict` (updates).
 
-**Status:** em curso — ingest + security feitos (só whitelist, sem SPF/DKIM); próximo: triage.
+**Status:** em curso — ingest + security + triage feitos (nós async no triage; grafo ainda não compilado); próximo: `build_graph`.
 
 ---
 
@@ -63,13 +63,16 @@ Testes (`tests/test_node_security.py`):
 
 Referência: `triage.py` + `TriageOutput` + prompts em `app/llm/prompts.py` (podes um prompt curto no próprio nó).
 
-- [ ] Schema Pydantic `TriageOutput`: `is_ap: bool`, `confidence: float`
-- [ ] `await deps.llm.generate(system_prompt=..., user_prompt=subject+body, output_schema=TriageOutput)`  
-  LangGraph: nó **async** (`ainvoke`) **ou** `asyncio.run` no worker sync — escolhe uma e usa-a em todos os sítios
-- [ ] `not is_ap` e `confidence >= TRIAGE_DISCARD_MIN_CONFIDENCE` → `discarded`, save, stop
-- [ ] Senão → ticket fica OPEN (mail AP); END
+- [x] Schema Pydantic `TriageOutput`: `is_ap: bool`, `confidence: float` (`app/domain/schemas.py`)
+- [x] `await deps.llm.generate(..., output_schema=TriageOutput)` — nó **async** (o grafo compilado usará `ainvoke`)
+- [x] `not is_ap` e `confidence >= TRIAGE_DISCARD_MIN_CONFIDENCE` → `discarded`, save, stop
+- [x] Senão → ticket fica OPEN (`is_ap` gravado no ticket)
 
-Testes com `MockLLMAdapter.enqueue({"is_ap": False, "confidence": 0.9})` → DISCARDED; `is_ap True` → OPEN.
+Testes (`tests/test_node_triage.py`):
+
+- [x] `enqueue({"is_ap": False, "confidence": 0.9})` → DISCARDED
+- [x] `is_ap True` → OPEN
+- [x] `is_ap False` com confiança baixa → OPEN (não descarta)
 
 **Não** implementes IntentNode.
 
