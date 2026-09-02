@@ -46,6 +46,15 @@ async def test_whitelisted_ap_email_ends_open():
     store = InMemoryTicketStore()
     llm = MockLLMAdapter()
     llm.enqueue({"is_ap": True, "confidence": 0.95})
+    llm.enqueue(
+        {
+            "intent": "payment_status",
+            "confidence": 0.9,
+            "language": "en",
+            "extracted_ref": "INV-2026-0001",
+            "extracted_amount": 1250.0,
+        }
+    )
     graph = build_graph(_deps(store, llm))
 
     final = await graph.ainvoke(
@@ -57,7 +66,7 @@ async def test_whitelisted_ap_email_ends_open():
     assert ticket.status is TicketStatus.OPEN
     assert ticket.is_ap is True
     assert final["should_stop"] is False
-    assert len(llm.calls) == 1
+    assert len(llm.calls) == 2
 
 
 @pytest.mark.asyncio

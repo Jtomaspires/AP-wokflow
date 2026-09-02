@@ -6,7 +6,7 @@
 >
 > Previous: [PLAN_DAY3.md](PLAN_DAY3.md). Next: [PLAN_DAY5.md](PLAN_DAY5.md). Charter: [README.md](README.md).
 
-**Status:** planned.
+**Status:** closed — spine through routing + SPF/DKIM + per-node audit. Resolution is a no-op stub. Next: [PLAN_DAY5.md](PLAN_DAY5.md).
 
 Nodes = `make_*_node(deps) -> (state) -> dict`. Routers = `add_conditional_edges`. Do not copy `BaseRouter`.
 
@@ -41,10 +41,10 @@ Extend `LabState` / graph state toward `ProcessingContext` (assistant `app/domai
 File: `app/graph/nodes/security.py`  
 Reference: `p2p-ai-assistant/app/workflow/nodes/security.py`
 
-- [ ] `SECURITY_CHECK_ENABLED=False` → pass
-- [ ] Domain not in `SENDER_DOMAIN_WHITELIST` → `QUARANTINED`, stop
-- [ ] If `SPF_DKIM_ENABLED`: both SPF and DKIM fail → `QUARANTINED`; partial fail → confidence penalty (assistant uses −0.2), continue
-- [ ] Audit `QUARANTINE` / `PASS`
+- [x] `SECURITY_CHECK_ENABLED=False` → pass
+- [x] Domain not in `SENDER_DOMAIN_WHITELIST` → `QUARANTINED`, stop
+- [x] If `SPF_DKIM_ENABLED`: both SPF and DKIM fail → `QUARANTINED`; partial fail → confidence penalty (−0.2), continue
+- [x] Audit `QUARANTINE` / `PASS`
 
 Tests: whitelist, flag off, dual fail, partial fail (do not quarantine).
 
@@ -55,11 +55,11 @@ Tests: whitelist, flag off, dual fail, partial fail (do not quarantine).
 File: `app/graph/nodes/thread.py`  
 Reference: `thread.py`
 
-- [ ] `list_by_thread_id` (Day 3 port)
-- [ ] OPEN or AWAITING_HUMAN on same thread → continuation → route **resolution**, set `is_thread_continuation`
-- [ ] RESOLVED → reopen (assistant behaviour) → resolution
-- [ ] ESCALATED → update body, **stop**
-- [ ] Else → route **triage** (new thread)
+- [x] `list_by_thread_id` (Day 3 port)
+- [x] OPEN or AWAITING_HUMAN on same thread → continuation → route **resolution**, set `is_thread_continuation`
+- [x] RESOLVED → reopen → resolution
+- [x] ESCALATED → update body, **stop**
+- [x] Else → route **triage** (new thread)
 
 Tests: new vs continuation vs escalated stop.
 
@@ -69,9 +69,9 @@ Tests: new vs continuation vs escalated stop.
 
 File: `app/graph/nodes/triage.py`
 
-- [ ] Same discard rule: `not is_ap` and conf ≥ `TRIAGE_DISCARD_MIN_CONFIDENCE` → `DISCARDED`, END
-- [ ] Else → **intent** (not END)
-- [ ] Audit `DISCARD` / `PASS`
+- [x] Same discard rule: `not is_ap` and conf ≥ `TRIAGE_DISCARD_MIN_CONFIDENCE` → `DISCARDED`, END
+- [x] Else → **intent** (not END)
+- [x] Audit `DISCARD` / `PASS`
 
 ---
 
@@ -80,10 +80,10 @@ File: `app/graph/nodes/triage.py`
 File: `app/graph/nodes/intent.py`  
 Reference: `intent.py`, `IntentOutput`, prompts
 
-- [ ] LLM → `payment_status` | `delay_reason` | `future_timing` | `unknown` + extract ref/amount/language
-- [ ] Persist intent/language on ticket
-- [ ] `UNKNOWN` **or** confidence &lt; `INTENT_MIN_CONFIDENCE` → `skip_identity=True` → skip sender/routing → resolution
-- [ ] Else → sender
+- [x] LLM → `payment_status` | `delay_reason` | `future_timing` | `unknown` + extract ref/amount/language
+- [x] Persist intent/language on ticket
+- [x] `UNKNOWN` **or** confidence &lt; `INTENT_MIN_CONFIDENCE` → `skip_identity=True` → skip sender/routing → resolution
+- [x] Else → sender
 
 Tests: known intent vs unknown vs low confidence.
 
@@ -93,32 +93,32 @@ Tests: known intent vs unknown vs low confidence.
 
 Files: `sender.py`, `routing.py` equivalents under `app/graph/nodes/`
 
-- [ ] Sender: email match 0.9 → unique domain 0.6 → unknown 0.0; **never** stops
-- [ ] Routing: if rule operator ≠ `DEFAULT_OPERATOR_ID` → `DELEGATED`, stop; else MINE → resolution
-- [ ] Audit `IDENTIFY`, `MINE`, `DELEGATE`
+- [x] Sender: email match 0.9 → unique domain 0.6 → unknown 0.0; **never** stops
+- [x] Routing: if rule operator ≠ `DEFAULT_OPERATOR_ID` → `DELEGATED`, stop; else MINE → resolution
+- [x] Audit `IDENTIFY`, `MINE`, `DELEGATE`
 
 ---
 
 ## Compile (`app/graph/app.py`)
 
-- [ ] Nodes: ingest, security, thread, triage, intent, sender, routing (+ optional resolution placeholder)
-- [ ] Conditional edges for all routers above
-- [ ] Audit wrapper: after each node, `deps.audit.append(...)` from last action/metadata (mirror `_record_audit`)
+- [x] Nodes: ingest, security, thread, triage, intent, sender, routing, resolution stub
+- [x] Conditional edges for all routers above
+- [x] Audit wrapper after each node (`deps.audit.append`)
 
 Integration tests (memory deps, `ainvoke`):
 
-- [ ] Paths equivalent to assistant `test_nodes_0_to_5.py` / `test_workflow_integration.py` (up to routing)
-- [ ] Discard never calls intent LLM
-- [ ] Delegate never calls a future resolution node
+- [x] Paths up to routing (memory `ainvoke`)
+- [x] Discard never calls intent LLM
+- [x] Delegate never calls the resolution stub
 
 ---
 
 ## Definition of Done — Day 4
 
-- [ ] Graph topology matches assistant through Routing
-- [ ] SPF/DKIM behaviour matches assistant
-- [ ] Audit rows per node in Postgres tests
-- [ ] No Draft/HITL/Send, no Streamlit, no resolution retry loop
+- [x] Graph topology matches assistant through Routing (resolution is a stub)
+- [x] SPF/DKIM behaviour matches assistant
+- [x] Audit rows per node in Postgres tests
+- [x] No Draft/HITL/Send, no Streamlit, no resolution retry loop
 
 ---
 

@@ -12,6 +12,13 @@ from settings import settings
 
 # Lab default so POST /ingest + worker can reach triage without enqueue.
 _DEFAULT_TRIAGE = {"is_ap": True, "confidence": 0.9}
+_DEFAULT_INTENT = {
+    "intent": "payment_status",
+    "confidence": 0.9,
+    "language": "en",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1250.0,
+}
 
 
 def build_workflow_deps(
@@ -21,7 +28,7 @@ def build_workflow_deps(
 ) -> WorkflowDeps:
     return WorkflowDeps(
         settings=settings,
-        llm=llm or MockLLMAdapter(responses=[_DEFAULT_TRIAGE]),
+        llm=llm or MockLLMAdapter(responses=[_DEFAULT_TRIAGE, _DEFAULT_INTENT]),
         email=MockEmailAdapter(),
         tickets=TicketRepo(session),
         sap=MockSAPAdapter(),
