@@ -6,7 +6,7 @@
 >
 > After this day: [PLAN_DAY3.md](PLAN_DAY3.md) expands domain/ports. Do **not** add Intent here. Charter: [README.md](README.md).
 
-**Status:** in progress — compiled graph (`ainvoke`); **runtime still open:** Celery `process_email` + FastAPI.
+**Status:** in progress — Celery `process_email` done (sync tests vs Postgres); **still open:** FastAPI.
 
 HTTP on this day may use `POST /ingest`. Day 5 aligns routes with the assistant (`POST /webhook/mock` plus HITL). Sync fallback if Redis is down is optional here (P2P `app/api/main.py` idea) and required for assistant parity later.
 
@@ -100,19 +100,19 @@ Integration test **without Celery** (`tests/test_graph.py`):
 
 ---
 
-## Celery (`app/worker/tasks.py`) — still open
+## Celery (`app/worker/tasks.py`)
 
 Same idea as P2P `process_email`, by hand:
 
-- [ ] `Celery` broker/backend = `REDIS_URL`
-- [ ] `process_email(raw_payload: dict)`:
+- [x] `Celery` broker/backend = `REDIS_URL`
+- [x] `process_email(raw_payload: dict)`:
   - `Session(engine)`
   - `deps = build_workflow_deps(session)`
-  - `build_graph(deps).invoke(...)` or `ainvoke`
+  - `build_graph(deps).ainvoke(...)` (`asyncio.run` — triage is async)
   - return `{ticket_id, status}`
-- [ ] Windows worker: `--pool=solo`
+- [x] Windows worker: `--pool=solo` (see module docstring)
 
-First run the task **synchronously** in a test (no `.delay`) against Postgres.
+First run the task **synchronously** in a test (no `.delay`) against Postgres (`tests/test_process_email.py`). `run_process_email(..., llm=)` lets tests enqueue `MockLLMAdapter` responses; ACME+AP needs a queued dict or the mock raises.
 
 ---
 
