@@ -1,0 +1,15 @@
+[
+  {
+    "invoice_ref": "INV-2026-0001",
+    "supplier_name": "ACME Supplies",
+    "amount": "1250.00",
+    "stage": "in_approval",
+    "currency": "EUR",
+    "status": "pending",
+    "sap_id": "SAP-APP-001",
+    "company_code": "1000",
+    "approval_step": "L1",
+    "due_date": "2026-09-15",
+    "approval_owner_email": "ap-owner@company.com"
+  }
+]

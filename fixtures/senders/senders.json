@@ -1,0 +1,10 @@
+[
+  {
+    "id": "snd-acme",
+    "email": "billing@acme-supplies.com",
+    "name": "ACME Billing",
+    "company": "ACME Supplies",
+    "vendor_sap_id": "VEND-ACME",
+    "sender_type": "vendor"
+  }
+]

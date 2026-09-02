@@ -1,0 +1,8 @@
+[
+  {
+    "id": "rule-acme",
+    "operator_id": "op_joao",
+    "email": "billing@acme-supplies.com",
+    "domain": "acme-supplies.com"
+  }
+]
