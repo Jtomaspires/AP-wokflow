@@ -7,6 +7,9 @@ from app.domain.deps import WorkflowDeps
 from app.ports.llm_port import LLMPort
 from settings import settings
 
+# Lab default so POST /ingest + worker can reach triage without enqueue.
+_DEFAULT_TRIAGE = {"is_ap": True, "confidence": 0.9}
+
 
 def build_workflow_deps(
     session: Session,
@@ -17,5 +20,5 @@ def build_workflow_deps(
         settings=settings,
         email=MockEmailAdapter(),
         tickets=TicketRepo(session),
-        llm=llm or MockLLMAdapter(),
+        llm=llm or MockLLMAdapter(responses=[_DEFAULT_TRIAGE]),
     )

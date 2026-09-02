@@ -6,7 +6,7 @@
 >
 > After this day: [PLAN_DAY3.md](PLAN_DAY3.md) expands domain/ports. Do **not** add Intent here. Charter: [README.md](README.md).
 
-**Status:** in progress — Celery `process_email` done (sync tests vs Postgres); **still open:** FastAPI.
+**Status:** closed — LangGraph 3 nodes + Celery + FastAPI (`POST /ingest`). Next: [PLAN_DAY3.md](PLAN_DAY3.md).
 
 HTTP on this day may use `POST /ingest`. Day 5 aligns routes with the assistant (`POST /webhook/mock` plus HITL). Sync fallback if Redis is down is optional here (P2P `app/api/main.py` idea) and required for assistant parity later.
 
@@ -112,30 +112,31 @@ Same idea as P2P `process_email`, by hand:
   - return `{ticket_id, status}`
 - [x] Windows worker: `--pool=solo` (see module docstring)
 
-First run the task **synchronously** in a test (no `.delay`) against Postgres (`tests/test_process_email.py`). `run_process_email(..., llm=)` lets tests enqueue `MockLLMAdapter` responses; ACME+AP needs a queued dict or the mock raises.
+First run the task **synchronously** in a test (no `.delay`) against Postgres (`tests/test_process_email.py`). `run_process_email(..., llm=)` overrides the lab default mock (`is_ap=true` in `build_workflow_deps`).
 
 ---
 
-## FastAPI (`app/api/main.py`) — still open
+## FastAPI (`app/api/main.py`)
 
-- [ ] `GET /health`
-- [ ] `POST /ingest` (or `/webhook/mock`): body = P2P-style payload (`thread_id`, `message_id`, `from`/`from_email`, `subject`, `body`)
-  - `process_email.delay(payload)` → 202 `{task_id}` or `{ticket_id}` if known
-- [ ] `GET /tickets/{id}` → Postgres repo
+- [x] `GET /health`
+- [x] `POST /ingest`: body = P2P-style payload (`thread_id`, `message_id`, `from`/`from_email`, `subject`, `body`)
+  - `process_email.delay(payload)` → 202 `{task_id}`
+- [x] `GET /tickets/{id}` → Postgres repo
+- [x] Sync fallback on POST if Redis/broker is down → 202 `{ticket_id, status}`
 
-Three terminals + curl (payload with `thread_id` + `message_id` + `from` on a whitelisted domain).
+Root runbook + curl: [README.md](../README.md). Tests: `tests/test_api.py`.
 
-Optional: sync fallback on POST if Redis is down (P2P `app/api/main.py`).
+Day 5 aligns with the assistant (`POST /webhook/mock` plus HITL).
 
 ---
 
 ## Definition of Done — Day 2
 
-- [ ] You can explain: POST → Redis → worker → three LangGraph nodes → `tickets` row
-- [ ] You know why Triage uses `LLMPort` and not `openai` inside the node
-- [ ] You know why Security needs no extra port (only `settings` + ticket store)
-- [ ] Root README: uvicorn, celery, example curl (Day 7 makes this visual; a minimal runbook is enough here)
-- [ ] **No** Intent, SAP, HITL, Streamlit on this day
+- [x] Path: POST `/ingest` → Redis → worker → three LangGraph nodes → `tickets` row (fallback: in-process if broker down)
+- [x] Triage uses `LLMPort` (mock default `is_ap=true` in `build_workflow_deps`); the node does not import `openai`
+- [x] Security needs no extra port (only `settings` + ticket store)
+- [x] Root README: uvicorn, celery, example curl
+- [x] **No** Intent, SAP, HITL, Streamlit on this day
 
 ---
 

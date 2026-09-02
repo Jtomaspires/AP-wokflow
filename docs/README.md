@@ -43,7 +43,7 @@ Day 7 may **retry inside resolution** before HITL; that loop is not part of Days
 |---|---|---|---|
 | 0 | [PLAN_DAY0.md](PLAN_DAY0.md) | Scaffold, Docker, settings | Done (mini-lab) |
 | 1 | [PLAN_DAY1.md](PLAN_DAY1.md) | Domain + 3 ports + adapters + Alembic tickets | Done (mini-lab) |
-| 2 | [PLAN_DAY2.md](PLAN_DAY2.md) | LangGraph 3 nodes + **Celery + FastAPI still open** | Graph done; runtime open |
+| 2 | [PLAN_DAY2.md](PLAN_DAY2.md) | LangGraph 3 nodes + Celery + FastAPI | Done (mini-lab) |
 | 3 | [PLAN_DAY3.md](PLAN_DAY3.md) | Full domain, 7 ports, schema, fixtures | Planned |
 | 4 | [PLAN_DAY4.md](PLAN_DAY4.md) | Thread, intent, sender, routing, SPF/DKIM, audit | Planned |
 | 5 | [PLAN_DAY5.md](PLAN_DAY5.md) | Resolution (parity), draft, HITL, send, HITL API | Planned |
