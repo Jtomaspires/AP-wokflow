@@ -1,12 +1,7 @@
-"""Ingest node: parse webhook → persist OPEN ticket or stop.
-
-Missing ``thread_id`` or ``message_id``: ``should_stop=True`` and **no** ticket is
-created (rejected before persist). Duplicate ``message_id``: stop and reuse the
-existing ticket id.
-"""
+"""Ingest node: parse webhook → persist OPEN ticket or stop."""
 
 from app.domain.deps import WorkflowDeps
-from app.domain.enums import TicketStatus
+from app.domain.enums import AuditAction, TicketStatus
 from app.domain.models import Ticket
 from app.graph.state import LabState
 
@@ -16,12 +11,19 @@ def make_ingest_node(deps: WorkflowDeps):
         event = deps.email.parse_webhook(state.get("raw_payload") or {})
         thread_id = (event.thread_id or "").strip()
         message_id = (event.message_id or "").strip()
+        auth = {
+            "spf_pass": event.spf_pass,
+            "dkim_pass": event.dkim_pass,
+        }
 
         if not thread_id or not message_id:
             return {
                 "should_stop": True,
                 "ticket_id": None,
                 "stop_reason": "missing_ids",
+                "audit_action": AuditAction.INGEST.value,
+                "audit_metadata": {"reason": "missing_ids"},
+                **auth,
             }
 
         existing = deps.tickets.get_by_message_id(message_id)
@@ -30,6 +32,9 @@ def make_ingest_node(deps: WorkflowDeps):
                 "should_stop": True,
                 "ticket_id": str(existing.id),
                 "stop_reason": "duplicate",
+                "audit_action": AuditAction.INGEST.value,
+                "audit_metadata": {"reason": "duplicate"},
+                **auth,
             }
 
         saved = deps.tickets.save_ticket(
@@ -47,6 +52,9 @@ def make_ingest_node(deps: WorkflowDeps):
             "should_stop": False,
             "ticket_id": str(saved.id),
             "stop_reason": None,
+            "audit_action": AuditAction.INGEST.value,
+            "audit_metadata": {"reason": "created"},
+            **auth,
         }
 
     return ingest
