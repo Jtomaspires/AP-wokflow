@@ -1,76 +1,78 @@
-# Day 1 — Alembic + ver tabelas no pgAdmin
+# Day 1 — Alembic + viewing tables in pgAdmin
 
-Notas do que fizemos neste lab (`p2p-ai-langraph`). A BD do compose chama-se `lab` e está publicada no **host na porta 5434**.
+Notes from this lab (`p2p-ai-langraph`). The compose database is named `lab` and is published on the **host at port 5434**.
+
+Day 3 adds a second migration (audit, drafts, HITL tables, extra ticket columns). This page describes the **first** migration (`tickets` only).
 
 ---
 
-## 1. O que é o Alembic
+## 1. What Alembic is
 
-O Alembic **não** é o pgAdmin. É a ferramenta que:
+Alembic is **not** pgAdmin. It:
 
-1. lê o `TicketTable` (`app/adapters/db_models.py`);
-2. gera um ficheiro Python com o SQL (`CREATE TABLE`, índices);
-3. aplica esse SQL no Postgres (`upgrade`).
+1. reads `TicketTable` (`app/adapters/db_models.py`);
+2. generates a Python file with the SQL (`CREATE TABLE`, indexes);
+3. applies that SQL to Postgres (`upgrade`).
 
-O `TicketRepo` só grava **linhas**. Sem `upgrade`, a tabela ainda não existe.
+`TicketRepo` only writes **rows**. Without `upgrade`, the table does not exist yet.
 
-### Passos que já correste
+### Steps already run
 
-| Comando | Resultado |
+| Command | Result |
 |---------|----------|
-| `alembic init alembic` | `alembic.ini` + pasta `alembic/` |
-| `env.py` | importa `app.adapters.db_models`, `target_metadata = SQLModel.metadata`, URL = `settings.DATABASE_URL` |
-| `alembic revision --autogenerate -m "tickets"` | criou `alembic/versions/edb81d2a0b75_tickets.py` |
-| `alembic upgrade head` | `Running upgrade  -> edb81d2a0b75, tickets` — SQL aplicado na BD |
+| `alembic init alembic` | `alembic.ini` + `alembic/` folder |
+| `env.py` | imports `app.adapters.db_models`, `target_metadata = SQLModel.metadata`, URL = `settings.DATABASE_URL` |
+| `alembic revision --autogenerate -m "tickets"` | created `alembic/versions/edb81d2a0b75_tickets.py` |
+| `alembic upgrade head` | `Running upgrade  -> edb81d2a0b75, tickets` — SQL applied |
 
-Erro que vimos antes: `Can't load plugin: sqlalchemy.dialects:driver` — o `alembic.ini` ainda tinha o URL de exemplo `driver://...`. O `env.py` passa a usar o URL real (`postgresql+psycopg2://lab:lab_dev@localhost:5434/lab`).
+Error seen earlier: `Can't load plugin: sqlalchemy.dialects:driver` — `alembic.ini` still had the sample URL `driver://...`. `env.py` now uses the real URL (`postgresql+psycopg2://lab:lab_dev@localhost:5434/lab`).
 
-Na migration gerada faz falta `import sqlmodel` (o autogenerate usa `sqlmodel.sql.sqltypes.AutoString()`). Sem isso o `upgrade` rebenta.
+The generated migration needs `import sqlmodel` (autogenerate uses `sqlmodel.sql.sqltypes.AutoString()`). Without it, `upgrade` blows up.
 
-### O ficheiro da migration
+### The migration file
 
 `alembic/versions/edb81d2a0b75_tickets.py`
 
-- `revision = 'edb81d2a0b75'` — id desta alteração
-- `down_revision = None` — é a primeira migration
+- `revision = 'edb81d2a0b75'` — id of this change
+- `down_revision = None` — first migration
 
-**`upgrade()`** (o que foi para o Postgres):
+**`upgrade()`** (what went to Postgres):
 
-- tabela `public.tickets`
-- colunas: `id` (UUID, PK), `thread_id`, `message_id`, `sender_email`, `subject`, `body` (Text), `received_at`, `status`, `is_ap` (nullable), `created_at`, `updated_at`
-- índice **unique** em `message_id` (um email → um ticket, como no P2P)
-- índices (não unique) em `sender_email`, `status`, `thread_id`
+- table `public.tickets`
+- columns: `id` (UUID, PK), `thread_id`, `message_id`, `sender_email`, `subject`, `body` (Text), `received_at`, `status`, `is_ap` (nullable), `created_at`, `updated_at`
+- **unique** index on `message_id` (one email → one ticket, as in P2P)
+- non-unique indexes on `sender_email`, `status`, `thread_id`
 
-**`downgrade()`** — remove índices e a tabela (não precisas disto no dia a dia).
+**`downgrade()`** — drops indexes and the table (you do not need this day to day).
 
-Alembic também cria a tabela `alembic_version` com uma linha (`edb81d2a0b75`) para saber o que já aplicou.
+Alembic also creates table `alembic_version` with one row (`edb81d2a0b75`) so it knows what is already applied.
 
-### Comandos úteis
+### Useful commands
 
 ```bash
-# gerar (já feito)
+# generate (already done for tickets)
 alembic revision --autogenerate -m "tickets"
 
-# aplicar (já feito)
+# apply
 alembic upgrade head
 
-# ver que revision está na BD
+# which revision is in the DB
 alembic current
 ```
 
 ---
 
-## 2. Ver as tabelas no pgAdmin
+## 2. Viewing tables in pgAdmin
 
-O **Example** no pgAdmin (user `postgres`, porta **5432**) é **outro** projecto. Não uses essa ligação para este lab.
+The **Example** server in pgAdmin (user `postgres`, port **5432**) is **another** project. Do not use that connection for this lab.
 
-### Ligar ao lab (5434)
+### Connect to the lab (5434)
 
-1. Object Explorer → **Servers** → botão direito → **Register** → **Server…**
-2. Tab **General:** Name = por exemplo `p2p-ai-langraph` (só o rótulo na árvore).
-3. Tab **Connection:**
+1. Object Explorer → **Servers** → right-click → **Register** → **Server…**
+2. **General** tab: Name = e.g. `p2p-ai-langraph` (label in the tree only).
+3. **Connection** tab:
 
-| Campo | Valor |
+| Field | Value |
 |--------|--------|
 | Host name/address | `127.0.0.1` |
 | Port | **5434** |
@@ -78,44 +80,44 @@ O **Example** no pgAdmin (user `postgres`, porta **5432**) é **outro** projecto
 | Username | `lab` |
 | Password | `lab_dev` |
 
-4. Save password se quiseres → **Save**.
+4. Save password if you want → **Save**.
 
-O contentor escuta 5432 **por dentro**; no Windows/pgAdmin usas **5434** (`ports: "5434:5432"` no `docker-compose.yml`).
+The container listens on 5432 **inside**; on Windows/pgAdmin you use **5434** (`ports: "5434:5432"` in `docker-compose.yml`).
 
-O contentor tem de estar a correr: `docker compose up -d db` na raiz do lab.
+The container must be running: `docker compose up -d db` at the lab root.
 
-### Onde está `tickets`
+### Where `tickets` is
 
 ```
 Servers → p2p-ai-langraph → Databases → lab → Schemas → public → Tables
 ```
 
-Deves ver **`tickets`** e **`alembic_version`**.
+You should see **`tickets`** and **`alembic_version`**. After Day 3: drafts, audit, etc.
 
-### SQL vs dados (grelha)
+### SQL vs data (grid)
 
-A tab **SQL** (com `tickets` seleccionado) mostra o `CREATE TABLE` — a **estrutura**, não as linhas.
+The **SQL** tab (with `tickets` selected) shows `CREATE TABLE` — **structure**, not rows.
 
-Para ver a tabela **preenchida** (grelha):
+To see the table **populated** (grid):
 
-- botão direito em **tickets** → **View/Edit Data** → **All Rows**
+- right-click **tickets** → **View/Edit Data** → **All Rows**
 
-ou Query Tool:
+or Query Tool:
 
 ```sql
 SELECT * FROM tickets;
 ```
 
-Hoje `tickets` está **vazia**: o Alembic só criou o esquema. As linhas aparecem quando o `TicketRepo.save_ticket` (Gate 3) ou o workflow de ingestão gravar um ticket.
+After Day 1, `tickets` is **empty**: Alembic only created the schema. Rows appear when `TicketRepo.save_ticket` (Gate 3) or the ingest node saves a ticket.
 
-`alembic_version` já tem uma linha — é o histórico do Alembic, não emails.
+`alembic_version` already has a row — Alembic history, not emails.
 
 ---
 
-## 3. Relação rápida
+## 3. Quick picture
 
 ```
-TicketTable (Python)  →  alembic revision  →  ficheiro em versions/
+TicketTable (Python)  →  alembic revision  →  file in versions/
                               ↓
                        alembic upgrade
                               ↓

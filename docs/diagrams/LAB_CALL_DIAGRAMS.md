@@ -1,110 +1,76 @@
-# Mini-lab — diagramas
+# Call diagrams — mini-lab (Days 0–2) and full spine (Days 3–6)
 
-Espelho de `P2P/diagrams/P2P_AI_CALL_DIAGRAMS.md`, **só** o âmbito do lab (Ingestão → Segurança → Triagem + API/Celery/Postgres).
+Mirror of `P2P/diagrams/P2P_AI_CALL_DIAGRAMS.md`. **No Streamlit.**
 
-Cola cada bloco Mermaid em [mermaid.live](https://mermaid.live), Notion, ou diagrams.net → *Arrange → Insert → Advanced → Mermaid*.
+Paste each Mermaid block into [mermaid.live](https://mermaid.live), Notion, or diagrams.net → *Arrange → Insert → Advanced → Mermaid*.
 
-`LAB_CALL_DIAGRAMS.drawio` tem as mesmas três vistas, editável no draw.io.
+`LAB_CALL_DIAGRAMS.drawio` has the same views (pages 1–3 = mini-lab; pages 4–6 = full spec).
 
 ---
 
-## 1. Arquitectura hexagonal
+## Days 0–2 — three ports, three nodes
 
-**Pitch:** o grafo e o domínio não importam Postgres, Redis nem o cliente LLM. Entram e saem por **ports**; os **adapters** mudam (memória nos testes, Postgres no worker) sem reescrever os nós.
+### 1. Hexagonal architecture (mini-lab)
+
+**Pitch:** the graph and domain do not import Postgres, Redis, or the LLM client. Traffic goes through **ports**; **adapters** swap (memory in tests, Postgres in the worker) without rewriting nodes.
 
 ```mermaid
 flowchart LR
-  classDef driving fill:#E8F1FF,stroke:#3B6EA5,color:#1A1A1A
-  classDef core fill:#FFF8E7,stroke:#C4A000,color:#1A1A1A
-  classDef port fill:#F3E8FF,stroke:#6B4C9A,color:#1A1A1A
-  classDef driven fill:#E8F6EE,stroke:#2E7D4F,color:#1A1A1A
-
   subgraph IN["Driving adapters — inbound"]
-    direction TB
     CURL["curl / TestClient"]
-    API["FastAPI<br/>POST /ingest · GET /tickets/id"]
+    API["FastAPI POST /ingest · GET /tickets/id"]
   end
 
   subgraph HEX["Core — vendor-agnostic"]
-    direction TB
-    subgraph DOM["Domain"]
-      M["IncomingEmail · Ticket<br/>TicketStatus · WorkflowDeps"]
-    end
-    subgraph UC["Use case"]
-      WF["LangGraph<br/>ingest → security → triage"]
-    end
-    subgraph PORTS["Ports — contracts"]
-      PE["EmailPort"]
-      PT["TicketStorePort"]
-      PL["LLMPort"]
-    end
-    DOM --> UC --> PORTS
+    M["IncomingEmail · Ticket · TicketStatus · WorkflowDeps"]
+    WF["LangGraph ingest → security → triage"]
+    PE["EmailPort"]
+    PT["TicketStorePort"]
+    PL["LLMPort"]
+    M --> WF --> PE
+    WF --> PT
+    WF --> PL
   end
 
   subgraph OUT["Driven adapters — outbound"]
-    direction TB
     EM["MockEmailAdapter"]
-    LLM["MockLLMAdapter<br/>optional OpenAI later"]
-    PG[("Postgres tickets<br/>Alembic")]
-    MEM["InMemoryTicketStore<br/>tests"]
+    LLM["MockLLMAdapter"]
+    PG[("Postgres tickets Alembic")]
+    MEM["InMemoryTicketStore tests"]
   end
 
   IN --> HEX --> OUT
-
-  class CURL,API driving
-  class M,WF core
-  class PE,PT,PL port
-  class EM,LLM,PG,MEM driven
 ```
 
-**O que nunca atravessa o hexágono:** o endpoint FastAPI não fala com o LLM; o nó de triagem não importa `openai`; o nó de ingestão não importa SQLModel — só `TicketStorePort.save_ticket`.
+FastAPI never talks to the LLM. Triage never imports `openai`. Ingest never imports SQLModel — only `TicketStorePort.save_ticket`.
 
----
+### 2. LangGraph (3 nodes)
 
-## 2. Grafo LangGraph (3 nós)
-
-**Pitch:** um payload percorre no máximo **três** nós. Há três saídas cedo (rejeitar ingest, quarentena, discard). **Não** há Thread, Intent, HITL nem Send.
-
-Numeração = P2P. Ordem de execução = ingestão **antes** de segurança (para poder gravar `QUARANTINED` no ticket).
+**Pitch:** a payload visits at most **three** nodes. Early exits: reject ingest, quarantine, discard. **No** Thread, Intent, HITL, or Send.
 
 ```mermaid
 flowchart TD
-  classDef node fill:#E8F1FF,stroke:#3B6EA5,color:#1A1A1A
-  classDef stop fill:#FDECEC,stroke:#C0392B,color:#1A1A1A
-  classDef ok fill:#E8F6EE,stroke:#2E7D4F,color:#1A1A1A
-  classDef llm fill:#F3E8FF,stroke:#6B4C9A,color:#1A1A1A
-
-  START([POST /ingest<br/>thread_id · message_id · from · subject · body]) --> N1
-
-  N1["1 · Ingest<br/>EmailPort.parse_webhook<br/>Ticket OPEN · save"] --> N1D{ids ok e não duplicado?}
-  N1D -->|Não — sem ids / duplicate message_id| REJ["STOP · sem ticket novo<br/>ou ticket existente"]
-  N1D -->|Sim| N0
-
-  N0["0 · Security<br/>whitelist domínio<br/>settings only"] --> N0D{Sender aceite?}
-  N0D -->|Não| QUAR["STOP · QUARANTINED"]
-  N0D -->|Sim| N2
-
-  N2["2 · Triage · 1.º LLM<br/>LLMPort.generate<br/>TriageOutput is_ap + confidence"] --> N2D{AP?}
-  N2D -->|Não + confiança alta| DISC["STOP · DISCARDED"]
-  N2D -->|Sim ou incerto| OPEN["END · ticket OPEN<br/>mail tratado como AP"]
-
-  class N1,N0 node
-  class N2 llm
-  class REJ,QUAR,DISC stop
-  class OPEN ok
+  START([POST /ingest]) --> N1
+  N1["Ingest EmailPort.parse_webhook Ticket OPEN"] --> N1D{ids ok and not duplicate?}
+  N1D -->|no| REJ["STOP"]
+  N1D -->|yes| N0
+  N0["Security domain whitelist"] --> N0D{Sender accepted?}
+  N0D -->|no| QUAR["STOP QUARANTINED"]
+  N0D -->|yes| N2
+  N2["Triage first LLM LLMPort"] --> N2D{AP?}
+  N2D -->|no plus high conf| DISC["STOP DISCARDED"]
+  N2D -->|yes or uncertain| OPEN["END ticket OPEN"]
 ```
 
-**LLM só no nó 2.** Ingestão e segurança são 100% determinísticos. Thread (1.5 no P2P) **não existe** neste lab.
+Ingest and security are deterministic. Thread (assistant 1.5) **does not exist** until Day 4.
 
----
+### 3. Runtime — request → queue → worker → DB
 
-## 3. Runtime — request → fila → worker → BD
-
-**Pitch:** isto é o que o lab existe para sentires. O LangGraph corre **dentro** do worker, não no processo do FastAPI (salvo fallback).
+**Pitch:** LangGraph runs **inside** the worker, not in the FastAPI process (except sync fallback).
 
 ```mermaid
 sequenceDiagram
-  participant C as curl / cliente
+  participant C as curl
   participant API as FastAPI
   participant R as Redis
   participant W as Celery worker
@@ -112,52 +78,136 @@ sequenceDiagram
   participant P as Postgres
 
   C->>API: POST /ingest payload
-  API->>P: opcional: ainda não (ticket nasce no ingest)
   API->>R: process_email.delay(payload)
   API-->>C: 202 accepted
-
-  W->>R: puxa task
-  W->>P: Session + TicketRepo
-  W->>G: invoke(state) com WorkflowDeps
-
-  G->>G: ingest · EmailPort + save_ticket
-  G->>P: INSERT tickets OPEN
-  G->>G: security · whitelist
-  alt quarentena
-    G->>P: UPDATE QUARANTINED
-  else passa
-    G->>G: triage · LLMPort
-    alt discard
-      G->>P: UPDATE DISCARDED
-    else AP
-      G->>P: ticket permanece OPEN
-    end
-  end
-
-  C->>API: GET /tickets/{id}
+  W->>R: pull task
+  W->>G: ainvoke with WorkflowDeps
+  G->>P: INSERT or UPDATE tickets
+  C->>API: GET /tickets/id
   API->>P: TicketRepo.get_by_id
-  API-->>C: status + campos
+  API-->>C: status
 ```
 
-**Se o worker estiver parado:** o POST devolve 202, o GET fica `queued` / ticket ainda não existe até o ingest correr — documenta o que a tua implementação faz (criar ticket só no grafo vs criar `queued` na API).
-
-**Se `alembic upgrade` não correu:** o worker falha ao `save_ticket` (tabela `tickets` inexistente).
+If the worker is down: POST may still return 202; GET has no row until ingest runs. If `alembic upgrade` did not run: `save_ticket` fails.
 
 ---
 
-## Mapa spec → código (lab)
+## Days 3–6 — seven ports, full workflow, HITL via API
 
-| Passo | P2P | Lab |
+### 4. Hexagon (assistant parity, no Streamlit)
+
+```mermaid
+flowchart LR
+  subgraph IN["Driving"]
+    CURL2["curl / TestClient"]
+    API2["FastAPI /webhook/mock /tickets approve escalate"]
+  end
+
+  subgraph HEX2["Core"]
+    DOM["IncomingEmail Ticket Invoice Draft Sender"]
+    WF2["LangGraph full spine plus HITL interrupt"]
+    P1["EmailPort"]
+    P2["TicketStorePort"]
+    P3["LLMPort"]
+    P4["SAPPort"]
+    P5["AuditPort"]
+    P6["SenderDirectoryPort"]
+    P7["DraftPort"]
+    DOM --> WF2
+    WF2 --> P1
+    WF2 --> P2
+    WF2 --> P3
+    WF2 --> P4
+    WF2 --> P5
+    WF2 --> P6
+    WF2 --> P7
+  end
+
+  subgraph OUT2["Driven"]
+    A1["MockEmail MockLLM optional OpenAI"]
+    A2["MockSAP MockSenders"]
+    A3[("Postgres tickets audit drafts reviews")]
+  end
+
+  IN --> HEX2 --> OUT2
+```
+
+### 5. Full LangGraph spine + HITL
+
+Day 7 retry stays **inside** `resolution` (not extra graph nodes). Default eval has retry off.
+
+```mermaid
+flowchart TD
+  START2([POST /webhook/mock]) --> ingest
+  ingest -->|missing ids or duplicate| E1[END]
+  ingest --> security
+  security -->|quarantine| E2[END]
+  security --> thread
+  thread -->|continuation| resolution
+  thread -->|new thread| triage
+  triage -->|discard| E3[END]
+  triage --> intent
+  intent -->|unknown or low conf| resolution
+  intent --> sender
+  sender --> routing
+  routing -->|DELEGATE| E4[END]
+  routing -->|MINE| resolution
+  resolution --> draft
+  draft --> hitl
+  hitl -->|AWAITING_HUMAN interrupt| wait[Wait for API]
+  wait -->|POST approve| send
+  wait -->|POST escalate| E5[END]
+  send --> E6[END]
+```
+
+### 6. Sequence — webhook through approve
+
+```mermaid
+sequenceDiagram
+  participant C as curl
+  participant API as FastAPI
+  participant R as Redis
+  participant W as Celery worker
+  participant G as LangGraph
+  participant P as Postgres
+
+  C->>API: POST /webhook/mock
+  API->>R: process_email.delay
+  API-->>C: 202 task_id
+  W->>G: ainvoke inbound graph
+  G->>P: tickets audit drafts
+  G-->>W: stop at HITL AWAITING_HUMAN
+  C->>API: GET /tickets/id
+  API->>P: ticket plus draft plus audit
+  API-->>C: AWAITING_HUMAN
+  C->>API: POST /tickets/id/approve
+  API->>G: resume send node
+  G->>P: RESOLVED HumanReview
+  API-->>C: ticket resolved
+```
+
+Escalate skips send and writes `ESCALATED`.
+
+---
+
+## Spec → code map
+
+| Step | Assistant | This repo |
 |---|---|---|
-| 1 Ingestion | `IngestionNode` | `app/graph/nodes/ingest.py` |
-| 0 Security | `SecurityNode` | `app/graph/nodes/security.py` |
-| 2 Triage | `TriageNode` | `app/graph/nodes/triage.py` |
-| Grafo | `TicketWorkflow` | `StateGraph` em `app/graph/app.py` |
-| Fila | `process_email.delay` | idem, `app/worker/tasks.py` |
-| Ports | 7 | 3: Email, TicketStore, LLM |
+| Ingest | `IngestionNode` | `app/graph/nodes/ingest.py` |
+| Security | `SecurityNode` | `app/graph/nodes/security.py` |
+| Thread | `ThreadResolutionNode` | `app/graph/nodes/thread.py` (Day 4) |
+| Triage | `TriageNode` | `app/graph/nodes/triage.py` |
+| Intent | `IntentNode` | `app/graph/nodes/intent.py` (Day 4) |
+| Sender / Routing | `SenderIdNode` / `RoutingNode` | Day 4 nodes |
+| Resolution / Draft / HITL / Send | matching node files | Days 5–7 |
+| Graph | `TicketWorkflow` | `StateGraph` in `app/graph/app.py` |
+| Queue | `process_email.delay` | `app/worker/tasks.py` |
+| HITL HTTP | `app/api/hitl.py` + tickets | Day 5 — **no Streamlit** |
+| Ports | 7 | 3 until Day 3; then 7 |
 
 ---
 
-## O que estes diagramas **não** mostram (de propósito)
+## What diagrams still omit
 
-HITL, SendNode, SAP, Sender directory, 10 nós, Streamlit. Isso está em `P2P/diagrams/`.
+Streamlit, OCR, live Nylas/SAP, auto-send. Day 7 retry is an internal loop in Resolution, not a separate box unless you expand the resolution node in a talk.

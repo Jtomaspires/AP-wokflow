@@ -1,17 +1,17 @@
-# Day 0 — Scaffold + infra (~2h, à mão)
+# Day 0 — Scaffold + infra (~2h, by hand)
 
-> Sem gerar o projecto com o agente. Tu crias pastas, `pyproject`, compose e settings.
+> Mini-lab day. Create folders, `pyproject`, compose, and settings yourself. Do not generate the whole project with an agent.
 
-**Status:** em curso — setup até à árvore feito; próximo: `__init__.py`.
+**Status:** done — scaffold through settings. Next historically: Day 1 domain. Full product spec continues in [PLAN_DAY3.md](PLAN_DAY3.md)–[PLAN_DAY7.md](PLAN_DAY7.md). Charter: [README.md](README.md).
 
 ---
 
-## Bloco (~2h)
+## Block (~2h)
 
 ### Setup (45 min)
 
-- [x] Em `p2p-ai-langraph/`: `git init` se precisares; `.gitignore` (`__pycache__/`, `.env`, `.venv/`, `.pytest_cache/`)
-- [x] `pyproject.toml` escrito por ti (`version` é obrigatório para o setuptools):
+- [x] In `p2p-ai-langraph/`: `git init` if needed; `.gitignore` (`__pycache__/`, `.env`, `.venv/`, `.pytest_cache/`)
+- [x] `pyproject.toml` written by you (`version` is required for setuptools):
 
 ```toml
 [project]
@@ -34,7 +34,7 @@ dev = ["pytest", "pytest-asyncio", "httpx", "ruff"]
 ```
 
 - [x] `pip install -e ".[dev]"`
-- [x] Árvore (vazia de lógica):
+- [x] Tree (no business logic yet):
 
 ```
 app/
@@ -49,22 +49,23 @@ tests/
 docs/
 ```
 
-- [x] `__init__.py` em cada pacote `app/`
+- [x] `__init__.py` in every `app/` package
+
 ### Docker (30 min)
 
-Portas **5434** (Postgres) e **6380** (Redis) para não chocar com o P2P (`5433` / `6379`).
+Ports **5434** (Postgres) and **6380** (Redis) so this lab does not clash with P2P (`5433` / `6379`).
 
 - [x] `docker-compose.yml`: `postgres:16-alpine` (`lab` / `lab_dev` / db `lab`), `redis:7-alpine`, healthchecks
-- [x] Correr **dentro** de `p2p-ai-langraph/`: `docker compose up -d`
+- [x] Run **inside** `p2p-ai-langraph/`: `docker compose up -d`
 - [x] `docker compose ps` — healthy
 
 ### Settings (20 min)
 
-- [x] `settings.py`: `DATABASE_URL`, `REDIS_URL`, e já deixa sítio para Day 1:
-  - `SENDER_DOMAIN_WHITELIST` (string CSV, ex. `acme-supplies.com`)
-  - `SECURITY_CHECK_ENABLED=True` neste lab (para a whitelist **fazer** alguma coisa)
+- [x] `settings.py`: `DATABASE_URL`, `REDIS_URL`, and placeholders for Day 1:
+  - `SENDER_DOMAIN_WHITELIST` (CSV string, e.g. `acme-supplies.com`)
+  - `SECURITY_CHECK_ENABLED=True` in this lab (so the whitelist actually does something)
   - `TRIAGE_DISCARD_MIN_CONFIDENCE=0.8`
-- [x] `.env.dev` → copiar para `.env`
+- [x] Copy `.env.dev` → `.env`
 
 ### Gate
 
@@ -79,6 +80,6 @@ python -c "from settings import settings; print(settings.DATABASE_URL)"
 
 ---
 
-## Fora deste dia
+## Out of scope for this day
 
-Não implementes nós, ports, nem LangGraph. Não copies o `pyproject` enorme do P2P (sem Streamlit, openai, reportlab).
+Do not implement nodes, ports, or LangGraph. Do not copy the huge P2P `pyproject` (no Streamlit, openai, reportlab required on Day 0).

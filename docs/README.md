@@ -1,84 +1,83 @@
-# Mini-lab — infra + dois nós reais (até ao primeiro LLM)
+# P2P AI LangGraph — technical spec (parity with p2p-ai-assistant)
 
-Este projecto **não** reconstrói o P2P. Reconstróis **à mão**:
+This repo rebuilds **`p2p-ai-assistant`** with **native LangGraph** instead of Launchpad `TicketWorkflow` / `core/`.
 
-1. O caminho **API → Celery → worker → Postgres (Alembic)**.
-2. Os **primeiros nós do grafo** do P2P, em **LangGraph**, com a mesma ideia **ports / adapters**.
+Days **0–2** were a **mini-lab** (ingest → security → triage). Days **3–6** bring the lab to **the same technical spec** as the assistant. Day **7** is **post-parity** (features the original product does not have).
 
-No P2P a spine começa assim:
+**Streamlit is out of scope.** Operators use FastAPI (curl / any HTTP client).
+
+## How to work
+
+- `p2p-ai-assistant` is **reference only**: read a node, reimplement as LangGraph `(state) -> dict` + `StateGraph`. Do **not** copy `TicketWorkflow` or `app/workflow/core/`.
+- Close `WorkflowDeps` in node factories. **Never** put `deps` in graph state (it does not serialize).
+- Behaviour source of truth: **current assistant code**, not unimplemented parent-spec items (OCR, live Nylas, live SAP, auto-send).
+
+## Target graph (Days 3–6)
 
 ```
-Ingestion → Security → Thread → Triage (1.º LLM) → Intent → …
+START → ingest → security → thread ─┬─ continuation → resolution → draft → hitl ─ interrupt
+                                    └─ new → triage ─┬─ discard → END
+                                                     └─ intent ─┬─ skip identity → resolution → …
+                                                                └─ sender → routing ─┬─ DELEGATE → END
+                                                                                     └─ MINE → resolution → draft → hitl
+HITL resume: approve → send → END | escalate → END
 ```
 
-Aqui **cortas no Triage** (primeiro nó que chama o LLM). **Não** implementas Thread (continuação de emails).
+Day 7 may **retry inside resolution** before HITL; that loop is not part of Days 3–6.
 
-```
-Ingestion → Security → Triage → END
-```
+## What is in vs out
 
-- Ingestão + segurança = dois nós de domínio **completos** (parse, persistir ticket, whitelist).
-- Triage = tecto: estrutura `LLMPort` + mock, sem Intent/SAP/draft/HITL.
-
-## Como trabalhar (manual)
-
-- **Escreve tu** cada ficheiro. Não peças ao Cursor para gerar o lab inteiro.
-- O `p2p-ai-assistant` é **referência**: abre um nó, percebe, reimplementa em LangGraph (funções + `StateGraph`), não copies `TicketWorkflow` / `core/`.
-- Se ficares bloqueado, lê o P2P; depois fecha e escreve a tua versão mais pequena.
-
-Referência útil no P2P:
-
-| Peça | Onde olhar (só ler) |
+| In | Out |
 |---|---|
-| `IncomingEmail` | `app/domain/events.py` |
-| `Ticket` / `TicketStatus` | `app/domain/models.py`, `enums.py` |
-| `EmailPort` | `app/ports/email_port.py` |
-| Tickets | `app/ports/invoice_store_port.py` (podes nomear `TicketStorePort`) |
-| `LLMPort` | `app/ports/llm_port.py` |
-| Ingestão | `app/workflow/nodes/ingestion.py` |
-| Segurança | `app/workflow/nodes/security.py` |
-| Triagem | `app/workflow/nodes/triage.py` |
-| Mocks | `app/adapters/mock_email.py`, `mock_llm.py` |
-| Wiring | `app/api/deps.py` `build_workflow_deps` |
-| Fila | `app/api/main.py` + `app/workflow/tasks.py` |
+| Full spine in LangGraph (nodes 0–8 + Send on HITL resume) | Streamlit dashboard |
+| FastAPI: `/webhook/mock`, tickets, approve/escalate | Live Nylas webhook/send (flag + mock only) |
+| Celery + Redis | Live SAP (`MockSAPAdapter` + fixtures) |
+| Alembic: tickets, audit, drafts, human_reviews, senders, routing_rules, invoice_cache | OCR / PDF pipeline |
+| 7 ports: Email, Tickets, LLM, SAP, Audit, Senders, Drafts | Auto-send via `CONFIDENCE_THRESHOLD` |
+| Mock + Postgres adapters; optional OpenAI behind `LLMPort` | Copying Launchpad `core/` / `WorkflowRegistry` |
+| Eval / golden fixtures 001–020 (Day 6) | |
 
-## O que entra vs o que fica de fora
+## Plans
 
-| Entra | Fica de fora |
+| Day | File | Focus | Status |
+|---|---|---|---|
+| 0 | [PLAN_DAY0.md](PLAN_DAY0.md) | Scaffold, Docker, settings | Done (mini-lab) |
+| 1 | [PLAN_DAY1.md](PLAN_DAY1.md) | Domain + 3 ports + adapters + Alembic tickets | Done (mini-lab) |
+| 2 | [PLAN_DAY2.md](PLAN_DAY2.md) | LangGraph 3 nodes + **Celery + FastAPI still open** | Graph done; runtime open |
+| 3 | [PLAN_DAY3.md](PLAN_DAY3.md) | Full domain, 7 ports, schema, fixtures | Planned |
+| 4 | [PLAN_DAY4.md](PLAN_DAY4.md) | Thread, intent, sender, routing, SPF/DKIM, audit | Planned |
+| 5 | [PLAN_DAY5.md](PLAN_DAY5.md) | Resolution (parity), draft, HITL, send, HITL API | Planned |
+| 6 | [PLAN_DAY6.md](PLAN_DAY6.md) | Eval / shadow via `ainvoke` | Planned |
+| 7 | [PLAN_DAY7.md](PLAN_DAY7.md) | Resolution retry loop + visual README | Planned (post-parity) |
+
+Alembic + pgAdmin (lab DB on port **5434**): [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md).
+
+## LangGraph mapping (locked)
+
+| Assistant | This repo |
 |---|---|
-| FastAPI `POST` ingest + `GET` ticket | Streamlit, Nylas, HITL approve |
-| Celery + Redis | Eval, 20 fixtures golden |
-| Alembic + tabela `tickets` (mínima) | SAP, drafts, audit por nó, senders |
-| Ports: email, tickets, LLM | SAPPort, DraftPort, SenderDirectory |
-| Adapters: mock email, mock LLM, Postgres + memória para testes | OpenAI obrigatório |
-| LangGraph: ingest → security → triage | Thread, Intent, Sender, Routing, Resolution, Draft, HITL, Send |
-| Settings (whitelist, flags) | Matching fatura, VAT, dashboard |
+| `TicketWorkflow` + `core/` | `StateGraph` in `app/graph/app.py` |
+| `Node.process(context)` / `BaseRouter` | `make_*_node(deps)` + `add_conditional_edges` |
+| `ProcessingContext` | Graph state (IDs + routing fields; heavy objects in DB) |
+| `HitlNode` stop + `HitlService` → `SendNode` | `interrupt()` / resume **or** same stop + re-entry; same operator API |
+| `POST /webhook/mock` → `process_email.delay` | Same routes (not only lab `/ingest`) |
+| `build_workflow_deps` (7 ports) | Same pattern |
 
-## Planos
+## Assistant reference (read only)
 
-| Dia | Ficheiro | Foco |
-|---|---|---|
-| 0 | [PLAN_DAY0.md](PLAN_DAY0.md) | Scaffold, Docker, settings |
-| 1 | [PLAN_DAY1.md](PLAN_DAY1.md) | Domain + ports + adapters + Alembic |
-| 2 | [PLAN_DAY2.md](PLAN_DAY2.md) | LangGraph (3 nós) + Celery + FastAPI |
-
-Notas do Alembic deste lab (migration `tickets` + pgAdmin na porta 5434): [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md).
-
-Cerca de **um dia e meio** de trabalho manual, não três dias de produto.
-
-## Diagramas
-
-Mesmo formato que `P2P/diagrams/` (Mermaid + draw.io), âmbito do lab:
-
-- [diagrams/LAB_CALL_DIAGRAMS.md](diagrams/LAB_CALL_DIAGRAMS.md) — hexágono (3 ports), grafo de 3 nós, sequência API → Redis → worker → Postgres
-- [diagrams/LAB_CALL_DIAGRAMS.drawio](diagrams/LAB_CALL_DIAGRAMS.drawio) — as mesmas vistas no diagrams.net
-
-## Relação com o P2P
-
-| P2P | Este lab |
+| Piece | Path in `p2p-ai-assistant` |
 |---|---|
-| `POST /webhook/mock` → `process_email.delay` | `POST /ingest` → `process_email.delay` |
-| `TicketWorkflow(deps).run(payload)` | `build_graph(deps).invoke(state)` |
-| Ingestion + Security + Triage | os mesmos três, em LangGraph |
-| `build_workflow_deps` | o mesmo padrão, menos ports |
-| Dashboard | `GET /tickets/{id}` |
+| Event / ticket / enums | `app/domain/events.py`, `models.py`, `enums.py`, `context.py` |
+| Ports | `app/ports/` |
+| Wiring | `app/api/deps.py` |
+| Queue | `app/api/main.py`, `app/workflow/tasks.py` |
+| Nodes 0–8 | `app/workflow/nodes/` |
+| HITL API | `app/api/hitl.py`, `app/api/tickets.py` |
+| Eval | `scripts/eval_harness.py`, `fixtures/emails/` |
+
+## Diagrams
+
+- [diagrams/LAB_CALL_DIAGRAMS.md](diagrams/LAB_CALL_DIAGRAMS.md) — 7-port hexagon, full graph + HITL, API sequence
+- [diagrams/LAB_CALL_DIAGRAMS.drawio](diagrams/LAB_CALL_DIAGRAMS.drawio) — same views in diagrams.net
+
+Mini-lab (Days 0–2) diagrams remain as the **first three pages** of the draw.io file; full-spine views are additional pages.

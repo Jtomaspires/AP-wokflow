@@ -1,35 +1,37 @@
-# Day 1 — Domain, ports, adapters, Alembic (~3h, à mão)
+# Day 1 — Domain, ports, adapters, Alembic (~3h, by hand)
 
-> Objectivo: a **mesma forma** que o P2P (`domain` → `ports` → `adapters`), só o que Ingestão + Segurança + Triagem precisam.
+> Mini-lab goal: the **same shape** as P2P (`domain` → `ports` → `adapters`), only what Ingest + Security + Triage need.
 >
-> Referência (ler, não colar o ficheiro inteiro): `p2p-ai-assistant/app/domain/`, `app/ports/`, `app/adapters/mock_*.py`, `app/adapters/postgres_repos.py` (só a parte de tickets).
+> Reference (read, do not paste whole files): `p2p-ai-assistant/app/domain/`, `app/ports/`, `app/adapters/mock_*.py`, `app/adapters/postgres_repos.py` (tickets only).
+>
+> Full domain + 7 ports = [PLAN_DAY3.md](PLAN_DAY3.md). Charter: [README.md](README.md).
 
-**Status:** fechado — Domain, ports, adapters, Alembic, Gates 1–3, wiring. LangGraph / Celery = Day 2.
+**Status:** closed — domain, 3 ports, adapters, Alembic, Gates 1–3, wiring. LangGraph / Celery = Day 2.
 
 ---
 
 ## 1. Domain (~40 min)
 
-Enums **mínimos** (`app/domain/enums.py`):
+Minimal enums (`app/domain/enums.py`):
 
 - [x] `TicketStatus`: `open`, `quarantined`, `discarded`  
-  (não precisas de `awaiting_human`, `delegated`, etc.)
+  (no `awaiting_human`, `delegated`, etc. until Day 3)
 
-Evento de entrada (`app/domain/events.py`) — espelha o P2P:
+Inbound event (`app/domain/events.py`) — mirror P2P:
 
-- [x] `IncomingEmail`: `thread_id`, `message_id`, `from_email`, `subject`, `body`, `received_at`, `attachments` (lista simples), opcional `spf_pass` / `dkim_pass`
+- [x] `IncomingEmail`: `thread_id`, `message_id`, `from_email`, `subject`, `body`, `received_at`, `attachments` (simple list), optional `spf_pass` / `dkim_pass`
 
-Ticket persistido (`app/domain/models.py`) — subconjunto:
+Persisted ticket (`app/domain/models.py`) — subset:
 
 - [x] `id` UUID, `thread_id`, `message_id`, `sender_email`, `subject`, `body`, `received_at`, `status`, `created_at`, `updated_at`
-- [x] Sem `intent`, `assigned_operator_id`, flags de thread — `is_ap: bool | None` incluído para a triagem
+- [x] No `intent` / `assigned_operator_id` / thread flags yet — `is_ap: bool | None` included for triage
 
 Deps (`app/domain/deps.py`):
 
 - [x] Dataclass `WorkflowDeps`: `settings`, `email`, `tickets`, `llm`  
-  (sem sap, senders, drafts, audit — podes acrescentar `audit` mais tarde se quiseres um log simples)
+  (no sap, senders, drafts, audit — Day 3)
 
-Estado LangGraph **ainda não** — isso é Day 2. Hoje os tipos de domínio e I/O.
+LangGraph **state is not this day** — that is Day 2. Today: domain types and I/O.
 
 ### Gate 1
 
@@ -38,49 +40,49 @@ pytest tests/test_domain.py -v
 ```
 
 - [x] Enums `.value`
-- [x] `IncomingEmail` / `Ticket` validam; ticket rejeita sem `thread_id`
-- [x] Round-trip Pydantic
+- [x] `IncomingEmail` / `Ticket` validate; ticket rejects missing `thread_id`
+- [x] Pydantic round-trip
 - [x] `pytest tests/test_domain.py -v` — 7 passed
 
 ---
 
 ## 2. Ports (~25 min)
 
-ABCs em `app/ports/`. Assinaturas alinhadas ao P2P, nomes teus se quiseres (`TicketStorePort` em vez de `InvoiceStorePort`).
+ABCs in `app/ports/`. Signatures aligned with P2P; you may name tickets `TicketStorePort` instead of `InvoiceStorePort`.
 
 - [x] `EmailPort.parse_webhook(payload: dict) -> IncomingEmail`
 - [x] `TicketStorePort`: `get_by_id`, `get_by_message_id`, `save_ticket`  
-  (`list_by_thread_id` **não** é obrigatório — não há ThreadNode)
+  (`list_by_thread_id` **not** required until ThreadNode / Day 4)
 - [x] `LLMPort.generate(*, system_prompt, user_prompt, output_schema: type[BaseModel]) -> BaseModel`  
-  (igual ao P2P; o mock valida um dict contra o schema)
+  (same as P2P; the mock validates a dict against the schema)
 
-Nenhum adapter ainda fala com LangGraph.
+No adapter talks to LangGraph yet.
 
 ---
 
 ## 3. Adapters (~50 min)
 
-Escreve implementações **pequenas**:
+Write **small** implementations:
 
-| Adapter | Papel | Olhar no P2P |
+| Adapter | Role | Look at in P2P |
 |---|---|---|
 | `mock_email.py` | `from` / `from_email`, subject, body → `IncomingEmail` | `mock_email.py` |
-| `mock_llm.py` | fila de dicts → `output_schema.model_validate` | `mock_llm.py` |
-| `memory_ticket_store.py` | dict em memória para testes de nós | `memory_ticket_store.py` |
-| `db_models.py` | `TicketTable` SQLModel `table=True` | `db_models.py` (só tickets) |
-| `postgres_tickets.py` | `TicketRepo` com `Session` | `postgres_repos.TicketRepo` (métodos que precisas) |
+| `mock_llm.py` | queue of dicts → `output_schema.model_validate` | `mock_llm.py` |
+| `memory_ticket_store.py` | in-memory dict for node tests | `memory_ticket_store.py` |
+| `db_models.py` | `TicketTable` SQLModel `table=True` | `db_models.py` (tickets only) |
+| `postgres_tickets.py` | `TicketRepo` with `Session` | `postgres_repos.TicketRepo` (methods you need) |
 
-- [x] Mock LLM: `enqueue({...})`; se a fila estiver vazia, erro claro
-- [x] Não implementes `OpenAILLMAdapter` neste dia (opcional no Day 2 se tiveres chave)
+- [x] Mock LLM: `enqueue({...})`; empty queue → clear error
+- [x] Do not implement `OpenAILLMAdapter` this day (optional Day 2 / Day 3 if you have a key)
 
-### Gate 2 — mocks + memória
+### Gate 2 — mocks + memory
 
 ```bash
 pytest tests/test_adapters.py -v
 ```
 
-- `parse_webhook` mapeia `from` → `from_email`
-- `MockLLMAdapter` devolve um `TriageOutput` (`is_ap: bool`, `confidence: float`)
+- `parse_webhook` maps `from` → `from_email`
+- `MockLLMAdapter` returns a `TriageOutput` (`is_ap: bool`, `confidence: float`)
 - Memory store: save + get_by_message_id
 - [x] `pytest tests/test_adapters.py -v` — 4 passed
 
@@ -88,43 +90,43 @@ pytest tests/test_adapters.py -v
 
 ## 4. Alembic (~40 min)
 
-- [x] `alembic init alembic` (pasta `alembic/` + `alembic.ini`)
-- [x] `env.py` importa `app.adapters.db_models` e usa `target_metadata = SQLModel.metadata`
-- [x] `env.py` usa `settings.DATABASE_URL` (`config.set_main_option("sqlalchemy.url", ...)`)
+- [x] `alembic init alembic` (`alembic/` + `alembic.ini`)
+- [x] `env.py` imports `app.adapters.db_models` and uses `target_metadata = SQLModel.metadata`
+- [x] `env.py` uses `settings.DATABASE_URL` (`config.set_main_option("sqlalchemy.url", ...)`)
 - [x] `alembic revision --autogenerate -m "tickets"` → `alembic/versions/edb81d2a0b75_tickets.py`
-- [x] **Lê** a migration: tabela `tickets`, índice unique em `message_id`
+- [x] **Read** the migration: table `tickets`, unique index on `message_id`
 - [x] `alembic upgrade head` (`Running upgrade  -> edb81d2a0b75, tickets`)
-- [x] Confirmar `tickets` no pgAdmin (`lab` em `127.0.0.1:5434`) — ver [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md)
+- [x] Confirm `tickets` in pgAdmin (`lab` at `127.0.0.1:5434`) — see [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md)
 
-### Gate 3 — repo Postgres
+### Gate 3 — Postgres repo
 
 ```bash
 pytest tests/test_ticket_repo.py -v
 ```
 
-- save + get_by_id na BD real (compose)
+- save + get_by_id on the real DB (compose)
 - [x] `pytest tests/test_ticket_repo.py -v` — 1 passed
 
 ---
 
 ## 5. Wiring (10 min)
 
-- [x] Função `build_workflow_deps(session)` em `app/api/deps.py`:  
+- [x] `build_workflow_deps(session)` in `app/api/deps.py`:  
   `MockEmailAdapter`, `TicketRepo(session)`, `MockLLMAdapter`, `settings`
 
-Ainda **não** ligues Celery (Day 2).
+Still **do not** wire Celery (Day 2).
 
 ---
 
 ## Definition of Done — Day 1
 
-- [x] Hexágono mínimo: 3 ports, mocks + Postgres tickets
-- [x] Tabela `tickets` criada pelo Alembic
-- [x] **Nenhum** ficheiro LangGraph ainda (amanhã)
-- [x] Tudo escrito por ti, com o P2P aberto ao lado só como guia
+- [x] Minimal hexagon: 3 ports, mocks + Postgres tickets
+- [x] `tickets` table created by Alembic
+- [x] **No** LangGraph files yet (Day 2)
+- [x] Written by you, P2P open beside you as a guide only
 
 ---
 
-## Fora deste dia
+## Out of scope for this day
 
-`ThreadResolutionNode`, Intent, Sender, SAP, drafts, `core/` Launchpad, copiar `postgres_repos.py` inteiro.
+`ThreadResolutionNode`, Intent, Sender, SAP, drafts, Launchpad `core/`, copying all of `postgres_repos.py`. Those land in Days 3–5.

@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" agent="p2p-ai-langraph mini-lab" version="22.1.0">
+<mxfile host="app.diagrams.net" agent="p2p-ai-langraph" version="22.1.0">
   <diagram id="hex" name="1. Hexagonal architecture">
     <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
       <root>
@@ -206,6 +206,184 @@
         <mxCell id="note" value="202 is returned before the graph runs. Alembic must have created tickets first." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
           <mxGeometry x="40" y="540" width="700" height="30" as="geometry" />
         </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="hex-full" name="4. Hexagon seven ports">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t4" value="Full spec — hexagonal architecture (7 ports, no Streamlit)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="drv4" value="Driving — FastAPI webhook + HITL" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="280" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d41" value="curl / TestClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="drv4">
+          <mxGeometry x="20" y="50" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d42" value="POST /webhook/mock&#xa;GET /tickets · approve · escalate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="drv4">
+          <mxGeometry x="20" y="115" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="hex4" value="Core" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=#fff2cc;strokeColor=#d6b656;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="80" width="560" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="dom4" value="Domain: Ticket Invoice Draft Sender Audit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hex4">
+          <mxGeometry x="20" y="50" width="520" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc4" value="LangGraph full spine + HITL interrupt / Send on resume" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="hex4">
+          <mxGeometry x="20" y="120" width="520" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p41" value="EmailPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="20" y="200" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p42" value="TicketStorePort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="200" y="200" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p43" value="LLMPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="380" y="200" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p44" value="SAPPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="20" y="260" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p45" value="AuditPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="200" y="260" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p46" value="SenderDirectoryPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="380" y="260" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p47" value="DraftPort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="hex4">
+          <mxGeometry x="20" y="320" width="160" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="out4" value="Driven adapters" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="960" y="80" width="300" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="o41" value="MockEmail · MockLLM · OpenAI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="out4">
+          <mxGeometry x="20" y="50" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o42" value="MockSAP · MockSenders" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="out4">
+          <mxGeometry x="20" y="130" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o43" value="Postgres tickets audit drafts reviews" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="out4">
+          <mxGeometry x="20" y="210" width="260" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="graph-full" name="5. Full spine plus HITL">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t5" value="Full spec — LangGraph spine + HITL (no Streamlit)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="800" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="s5" value="POST /webhook/mock" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="70" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ing" value="ingest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="530" y="150" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="sec" value="security" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="530" y="230" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="thr" value="thread" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="530" y="310" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tri" value="triage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="320" y="400" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="intn" value="intent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="320" y="490" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="snd" value="sender" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="320" y="580" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="rou" value="routing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="320" y="670" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="res" value="resolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="530" y="760" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dra" value="draft" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="530" y="850" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="hit" value="hitl interrupt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="530" y="940" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="sen" value="send" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="530" y="1120" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="stopq" value="STOP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="80" y="230" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="stopd" value="DISCARD / DELEGATE END" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="40" y="400" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="esc" value="escalate END" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="280" y="1030" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e51" edge="1" parent="1" source="s5" target="ing" style="endArrow=block;endFill=1;" />
+        <mxCell id="e52" edge="1" parent="1" source="ing" target="sec" style="endArrow=block;endFill=1;" />
+        <mxCell id="e53" edge="1" parent="1" source="sec" target="thr" style="endArrow=block;endFill=1;" />
+        <mxCell id="e54" edge="1" parent="1" source="sec" target="stopq" style="endArrow=block;endFill=1;" value="quarantine" />
+        <mxCell id="e55" edge="1" parent="1" source="thr" target="tri" style="endArrow=block;endFill=1;" value="new" />
+        <mxCell id="e56" edge="1" parent="1" source="thr" target="res" style="endArrow=block;endFill=1;" value="continuation" />
+        <mxCell id="e57" edge="1" parent="1" source="tri" target="intn" style="endArrow=block;endFill=1;" />
+        <mxCell id="e58" edge="1" parent="1" source="tri" target="stopd" style="endArrow=block;endFill=1;" value="discard" />
+        <mxCell id="e59" edge="1" parent="1" source="intn" target="snd" style="endArrow=block;endFill=1;" />
+        <mxCell id="e60" edge="1" parent="1" source="intn" target="res" style="endArrow=block;endFill=1;" value="skip identity" />
+        <mxCell id="e61" edge="1" parent="1" source="snd" target="rou" style="endArrow=block;endFill=1;" />
+        <mxCell id="e62" edge="1" parent="1" source="rou" target="res" style="endArrow=block;endFill=1;" value="MINE" />
+        <mxCell id="e63" edge="1" parent="1" source="rou" target="stopd" style="endArrow=block;endFill=1;" value="DELEGATE" />
+        <mxCell id="e64" edge="1" parent="1" source="res" target="dra" style="endArrow=block;endFill=1;" />
+        <mxCell id="e65" edge="1" parent="1" source="dra" target="hit" style="endArrow=block;endFill=1;" />
+        <mxCell id="e66" edge="1" parent="1" source="hit" target="sen" style="endArrow=block;endFill=1;" value="approve" />
+        <mxCell id="e67" edge="1" parent="1" source="hit" target="esc" style="endArrow=block;endFill=1;" value="escalate" />
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="runtime-hitl" name="6. Webhook to approve">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t6" value="Full spec — webhook → worker → HITL API → send" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="800" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="curl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="90" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="api6" value="FastAPI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="180" y="170" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r6b" value="Redis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="350" y="170" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="w6" value="Celery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="510" y="170" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g6" value="LangGraph HITL stop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="670" y="170" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pg6" value="Postgres" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="890" y="155" width="120" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="apv" value="POST /tickets/{id}/approve" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="180" y="360" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="snd6" value="send node" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="670" y="360" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="er1" edge="1" parent="1" source="c6" target="api6" style="endArrow=block;endFill=1;" value="webhook" />
+        <mxCell id="er2" edge="1" parent="1" source="api6" target="r6b" style="endArrow=block;endFill=1;" value=".delay" />
+        <mxCell id="er3" edge="1" parent="1" source="r6b" target="w6" style="endArrow=block;endFill=1;" />
+        <mxCell id="er4" edge="1" parent="1" source="w6" target="g6" style="endArrow=block;endFill=1;" value="ainvoke" />
+        <mxCell id="er5" edge="1" parent="1" source="g6" target="pg6" style="endArrow=block;endFill=1;" />
+        <mxCell id="er6" edge="1" parent="1" source="c6" target="apv" style="endArrow=block;endFill=1;dashed=1;" />
+        <mxCell id="er7" edge="1" parent="1" source="apv" target="snd6" style="endArrow=block;endFill=1;dashed=1;" value="resume" />
+        <mxCell id="er8" edge="1" parent="1" source="snd6" target="pg6" style="endArrow=block;endFill=1;dashed=1;" value="RESOLVED" />
       </root>
     </mxGraphModel>
   </diagram>

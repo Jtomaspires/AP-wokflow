@@ -1,149 +1,157 @@
-# Day 2 — LangGraph (Ingestão → Segurança → Triagem) + fila (~3–4h, à mão)
+# Day 2 — LangGraph (ingest → security → triage) + queue (~3–4h, by hand)
 
-> Substitui o `TicketWorkflow` por **LangGraph**. Mesma lógica dos três primeiros nós “úteis” do P2P, **sem** Thread.
+> Replace `TicketWorkflow` with **LangGraph**. Same logic as the first three “useful” P2P nodes, **without** Thread.
 >
-> Escreve os nós tu. Abre `ingestion.py` / `security.py` / `triage.py` no P2P, percebe os caminhos, reimplementa como funções `(state) -> dict` (updates).
+> Write the nodes yourself. Open `ingestion.py` / `security.py` / `triage.py` in P2P, understand the paths, reimplement as `(state) -> dict` updates.
+>
+> After this day: [PLAN_DAY3.md](PLAN_DAY3.md) expands domain/ports. Do **not** add Intent here. Charter: [README.md](README.md).
 
-**Status:** em curso — grafo compilado (`ainvoke`); próximo: Celery `process_email`.
+**Status:** in progress — compiled graph (`ainvoke`); **runtime still open:** Celery `process_email` + FastAPI.
+
+HTTP on this day may use `POST /ingest`. Day 5 aligns routes with the assistant (`POST /webhook/mock` plus HITL). Sync fallback if Redis is down is optional here (P2P `app/api/main.py` idea) and required for assistant parity later.
 
 ---
 
-## Grafo
+## Graph
 
 ```
 START → ingest → security → triage → END
-              ↘ stop (sem ids / duplicado)
-                    ↘ stop (quarentena)
-                          ↘ stop (discard)  ou  END com ticket OPEN
+              ↘ stop (missing ids / duplicate)
+                    ↘ stop (quarantine)
+                          ↘ stop (discard)  or  END with ticket OPEN
 ```
 
-LangGraph: `add_conditional_edges` quando `should_stop` (ou status terminal). Não copies `BaseRouter`.
+LangGraph: `add_conditional_edges` when `should_stop` (or terminal status). Do not copy `BaseRouter`.
 
-Estado (`app/graph/state.py`): `raw_payload`, `ticket_id`, `should_stop`, `stop_reason`. **Não** metas `deps` no state (não serializa bem) — `make_*_node(deps)` / `build_graph(deps)` fecham `deps` nas funções dos nós.
+State (`app/graph/state.py`): `raw_payload`, `ticket_id`, `should_stop`, `stop_reason`. **Do not** put `deps` in state (it does not serialize well) — `make_*_node(deps)` / `build_graph(deps)` close `deps` in the node functions.
 
 ---
 
-## Nó 1 — Ingestão (`app/graph/nodes/ingest.py`)
+## Node 1 — Ingest (`app/graph/nodes/ingest.py`)
 
-Referência: `p2p-ai-assistant/app/workflow/nodes/ingestion.py`
+Reference: `p2p-ai-assistant/app/workflow/nodes/ingestion.py`
 
 - [x] `deps.email.parse_webhook(raw_payload)` → `IncomingEmail`
-- [x] Sem `message_id` ou `thread_id` → `should_stop=True`, **não** crias ticket
-- [x] `get_by_message_id` → duplicado → stop, reutiliza o ticket existente
-- [x] Senão: constrói `Ticket(status=open)`, `save_ticket`
-- [x] Devolve update do state com `ticket_id` / `stop_reason`
+- [x] Missing `message_id` or `thread_id` → `should_stop=True`, **do not** create a ticket
+- [x] `get_by_message_id` → duplicate → stop, reuse existing ticket
+- [x] Else: build `Ticket(status=open)`, `save_ticket`
+- [x] Return state update with `ticket_id` / `stop_reason`
 
-Testes (`tests/test_node_ingest.py`) com **memory store** + mock email:
+Tests (`tests/test_node_ingest.py`) with **memory store** + mock email:
 
-- [x] payload válido → ticket OPEN na store
-- [x] mesmo `message_id` duas vezes → não cria segundo
-- [x] falta `thread_id` → stop
-
----
-
-## Nó 2 — Segurança (`app/graph/nodes/security.py`)
-
-Referência: `security.py` no P2P. Versão **reduzida** aceite:
-
-- [x] Se `SECURITY_CHECK_ENABLED=False` → passa, ticket fica OPEN
-- [x] Extrai domínio do `sender_email` do ticket
-- [x] Se domínio **não** está em `SENDER_DOMAIN_WHITELIST` → `status=quarantined`, `save_ticket`, `should_stop=True`
-- [x] Caso contrário → passa para triagem
-- [x] SPF/DKIM: **não** — só whitelist (`app/graph/nodes/security.py`)
-
-Testes (`tests/test_node_security.py`):
-
-- [x] domínio na whitelist → continua, ticket OPEN
-- [x] domínio fora + flag on → QUARANTINED, stop
-- [x] flag off → passa mesmo fora da lista
+- [x] valid payload → OPEN ticket in the store
+- [x] same `message_id` twice → no second ticket
+- [x] missing `thread_id` → stop
 
 ---
 
-## Nó 3 — Triagem = primeiro LLM (`app/graph/nodes/triage.py`)
+## Node 2 — Security (`app/graph/nodes/security.py`)
 
-Referência: `triage.py` + `TriageOutput` + prompts em `app/llm/prompts.py` (podes um prompt curto no próprio nó).
+Reference: `security.py` in P2P. **Reduced** version is accepted on Day 2:
 
-- [x] Schema Pydantic `TriageOutput`: `is_ap: bool`, `confidence: float` (`app/domain/schemas.py`)
-- [x] `await deps.llm.generate(..., output_schema=TriageOutput)` — nó **async** (o grafo compilado usará `ainvoke`)
-- [x] `not is_ap` e `confidence >= TRIAGE_DISCARD_MIN_CONFIDENCE` → `discarded`, save, stop
-- [x] Senão → ticket fica OPEN (`is_ap` gravado no ticket)
+- [x] If `SECURITY_CHECK_ENABLED=False` → pass, ticket stays OPEN
+- [x] Extract domain from ticket `sender_email`
+- [x] If domain is **not** in `SENDER_DOMAIN_WHITELIST` → `status=quarantined`, `save_ticket`, `should_stop=True`
+- [x] Otherwise → continue to triage
+- [x] SPF/DKIM: **not** this day — whitelist only (`app/graph/nodes/security.py`)
 
-Testes (`tests/test_node_triage.py`):
+Tests (`tests/test_node_security.py`):
+
+- [x] domain on whitelist → continue, ticket OPEN
+- [x] domain off-list + flag on → QUARANTINED, stop
+- [x] flag off → pass even if off-list
+
+SPF/DKIM parity with the assistant is [PLAN_DAY4.md](PLAN_DAY4.md).
+
+---
+
+## Node 3 — Triage = first LLM (`app/graph/nodes/triage.py`)
+
+Reference: `triage.py` + `TriageOutput` + prompts in `app/llm/prompts.py` (a short prompt in the node is fine).
+
+- [x] Pydantic schema `TriageOutput`: `is_ap: bool`, `confidence: float` (`app/domain/schemas.py`)
+- [x] `await deps.llm.generate(..., output_schema=TriageOutput)` — node is **async** (compiled graph uses `ainvoke`)
+- [x] `not is_ap` and `confidence >= TRIAGE_DISCARD_MIN_CONFIDENCE` → `discarded`, save, stop
+- [x] Else → ticket stays OPEN (`is_ap` stored on the ticket)
+
+Tests (`tests/test_node_triage.py`):
 
 - [x] `enqueue({"is_ap": False, "confidence": 0.9})` → DISCARDED
 - [x] `is_ap True` → OPEN
-- [x] `is_ap False` com confiança baixa → OPEN (não descarta)
+- [x] `is_ap False` with low confidence → OPEN (do not discard)
 
-**Não** implementes IntentNode.
+**Do not** implement IntentNode (Day 4). On Day 2, triage still edges to **END**. Day 4 changes that to Intent.
 
 ---
 
-## Compilar o grafo (`app/graph/app.py`)
+## Compile the graph (`app/graph/app.py`)
 
 - [x] `StateGraph(LabState)`
 - [x] `add_node` ingest, security, triage
-- [x] edges + conditionais em `should_stop`
+- [x] edges + conditionals on `should_stop`
 - [x] `compile()`
 - [x] `build_graph(deps) -> compiled graph`
 
-Teste de integração **sem Celery** (`tests/test_graph.py`):
+Integration test **without Celery** (`tests/test_graph.py`):
 
-- [x] email ACME (domínio whitelist) + mock LLM `is_ap=True` → ticket OPEN
-- [x] email domínio estranho + security on → QUARANTINED, triage **não** corre (`llm.calls` vazio)
-- [x] AP false alta confiança → DISCARDED
+- [x] ACME email (whitelisted domain) + mock LLM `is_ap=True` → ticket OPEN
+- [x] unknown domain + security on → QUARANTINED, triage **does not** run (`llm.calls` empty)
+- [x] AP false + high confidence → DISCARDED
 
 ---
 
-## Celery (`app/worker/tasks.py`)
+## Celery (`app/worker/tasks.py`) — still open
 
-Como o P2P `process_email`, à mão:
+Same idea as P2P `process_email`, by hand:
 
 - [ ] `Celery` broker/backend = `REDIS_URL`
 - [ ] `process_email(raw_payload: dict)`:
   - `Session(engine)`
   - `deps = build_workflow_deps(session)`
-  - `build_graph(deps).invoke(...)` ou `ainvoke`
+  - `build_graph(deps).invoke(...)` or `ainvoke`
   - return `{ticket_id, status}`
-- [ ] Worker Windows: `--pool=solo`
+- [ ] Windows worker: `--pool=solo`
 
-Primeiro corre a task **síncrona** num teste (sem `.delay`) contra Postgres.
+First run the task **synchronously** in a test (no `.delay`) against Postgres.
 
 ---
 
-## FastAPI (`app/api/main.py`)
+## FastAPI (`app/api/main.py`) — still open
 
 - [ ] `GET /health`
-- [ ] `POST /ingest` (ou `/webhook/mock`): body = payload tipo P2P (`thread_id`, `message_id`, `from`/`from_email`, `subject`, `body`)
-  - `process_email.delay(payload)` → 202 `{task_id}` ou `{ticket_id}` se souberes
-- [ ] `GET /tickets/{id}` → repo Postgres
+- [ ] `POST /ingest` (or `/webhook/mock`): body = P2P-style payload (`thread_id`, `message_id`, `from`/`from_email`, `subject`, `body`)
+  - `process_email.delay(payload)` → 202 `{task_id}` or `{ticket_id}` if known
+- [ ] `GET /tickets/{id}` → Postgres repo
 
-Três terminais + curl (payload com `thread_id` + `message_id` + `from` de um domínio da whitelist).
+Three terminals + curl (payload with `thread_id` + `message_id` + `from` on a whitelisted domain).
+
+Optional: sync fallback on POST if Redis is down (P2P `app/api/main.py`).
 
 ---
 
 ## Definition of Done — Day 2
 
-- [ ] Consegues explicar: POST → Redis → worker → três nós LangGraph → `tickets` row
-- [ ] Sabes porque o Triage usa `LLMPort` e não `openai` no nó
-- [ ] Sabes porque Security não precisa de port extra (só `settings` + ticket store)
-- [ ] README na raiz: uvicorn, celery, curl de exemplo
-- [ ] **Não** há Intent, SAP, HITL, Streamlit
+- [ ] You can explain: POST → Redis → worker → three LangGraph nodes → `tickets` row
+- [ ] You know why Triage uses `LLMPort` and not `openai` inside the node
+- [ ] You know why Security needs no extra port (only `settings` + ticket store)
+- [ ] Root README: uvicorn, celery, example curl (Day 7 makes this visual; a minimal runbook is enough here)
+- [ ] **No** Intent, SAP, HITL, Streamlit on this day
 
 ---
 
-## P2P ↔ lab (nós)
+## P2P ↔ lab (nodes)
 
-| P2P | Lab |
+| P2P | Lab (Day 2) |
 |---|---|
 | `IngestionNode.process` | `ingest` (LangGraph) |
 | `SecurityNode.process` | `security` |
 | `TriageNode.process` + `call_llm` | `triage` + `LLMPort` |
-| `ThreadResolutionNode` | **omitido** |
+| `ThreadResolutionNode` | **omitted until Day 4** |
 | `TicketWorkflow` + `core/` | `StateGraph` |
 
 ---
 
-## Se sobrar tempo (opcional)
+## If time remains (optional)
 
-- Fallback síncrono no POST se Redis estiver down (ideia do `app/api/main.py` P2P)
-- `OpenAILLMAdapter` atrás da mesma `LLMPort` — o nó de triagem **não muda**
+- Sync POST fallback if Redis is down
+- `OpenAILLMAdapter` behind the same `LLMPort` — the triage node **does not change**
