@@ -17,11 +17,20 @@ def _load_list(path: Path, model):
 
 
 class MockSenderDirectory(SenderDirectoryPort):
-    def __init__(self, fixtures_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        fixtures_dir: Path | None = None,
+        senders: list[Sender] | None = None,
+        rules: list[RoutingRule] | None = None,
+    ) -> None:
         root = fixtures_dir or _FIXTURES
-        self._senders: list[Sender] = _load_list(root / "senders.json", Sender)
-        self._rules: list[RoutingRule] = _load_list(
-            root / "routing_rules.json", RoutingRule
+        self._senders: list[Sender] = (
+            list(senders) if senders is not None else _load_list(root / "senders.json", Sender)
+        )
+        self._rules: list[RoutingRule] = (
+            list(rules)
+            if rules is not None
+            else _load_list(root / "routing_rules.json", RoutingRule)
         )
 
     def get_by_email(self, email: str) -> Sender | None:
