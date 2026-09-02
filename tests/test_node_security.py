@@ -2,6 +2,8 @@
 
 from uuid import UUID
 
+import pytest
+
 from app.adapters.memory_ticket_store import InMemoryTicketStore
 from app.domain.deps import WorkflowDeps
 from app.domain.enums import TicketStatus
@@ -16,11 +18,13 @@ def _deps(
     *,
     security_enabled: bool = True,
     whitelist: str = "acme-supplies.com",
+    spf_dkim_enabled: bool = False,
 ) -> WorkflowDeps:
     return make_test_deps(
         settings=Settings(
             SECURITY_CHECK_ENABLED=security_enabled,
             SENDER_DOMAIN_WHITELIST=whitelist,
+            SPF_DKIM_ENABLED=spf_dkim_enabled,
         ),
         tickets=store,
     )
@@ -83,3 +87,30 @@ def test_flag_off_allows_unknown_domain():
     ticket = store.get_by_id(UUID(after_security["ticket_id"]))
     assert ticket is not None
     assert ticket.status is TicketStatus.OPEN
+
+
+def test_spf_dkim_both_fail_quarantines():
+    store = InMemoryTicketStore()
+    deps = _deps(store, spf_dkim_enabled=True)
+    payload = _payload("billing@acme-supplies.com", message_id="msg-spf-fail")
+    payload["spf_pass"] = False
+    payload["dkim_pass"] = False
+    _, after_security = _ingest_then_security(deps, payload)
+    assert after_security["should_stop"] is True
+    ticket = store.get_by_id(UUID(after_security["ticket_id"]))
+    assert ticket is not None
+    assert ticket.status is TicketStatus.QUARANTINED
+
+
+def test_spf_dkim_partial_fail_continues_with_penalty():
+    store = InMemoryTicketStore()
+    deps = _deps(store, spf_dkim_enabled=True)
+    payload = _payload("billing@acme-supplies.com", message_id="msg-spf-partial")
+    payload["spf_pass"] = False
+    payload["dkim_pass"] = True
+    _, after_security = _ingest_then_security(deps, payload)
+    assert after_security["should_stop"] is False
+    ticket = store.get_by_id(UUID(after_security["ticket_id"]))
+    assert ticket is not None
+    assert ticket.status is TicketStatus.OPEN
+    assert ticket.confidence == pytest.approx(0.8)
