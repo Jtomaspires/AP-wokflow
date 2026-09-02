@@ -6,7 +6,7 @@
 >
 > Previous: [PLAN_DAY2.md](PLAN_DAY2.md). Next: [PLAN_DAY4.md](PLAN_DAY4.md). Charter: [README.md](README.md).
 
-**Status:** planned.
+**Status:** closed — 7 ports, mocks + Postgres tickets/audit/drafts, `full_schema` migration. Next: [PLAN_DAY4.md](PLAN_DAY4.md).
 
 Do **not** copy Launchpad `core/`. Do **not** implement Thread/Intent/Resolution nodes this day.
 
@@ -16,11 +16,11 @@ Do **not** copy Launchpad `core/`. Do **not** implement Thread/Intent/Resolution
 
 Files: `app/domain/enums.py`, `models.py`, `events.py`, `deps.py`, `schemas.py` (LLM outputs can stay thin until Day 4–5).
 
-- [ ] `TicketStatus`: `open`, `awaiting_human`, `awaiting_sender_reply`, `resolved`, `escalated`, `quarantined`, `discarded`, `delegated`
-- [ ] `Intent`, `SenderType`, `InvoiceStage`, `InvoiceStatus`, `InvoiceMatchResult`, `DraftTarget`, `HumanReviewAction`, `AuditAction` — same string values as assistant `app/domain/enums.py`
-- [ ] Models: `Sender`, `RoutingRule`, `Ticket` (full fields), `Invoice`, `ResponseDraft`, `AuditEntry`, `HumanReview`
-- [ ] Ticket fields the mini-lab skipped: `intent`, `language`, `assigned_operator_id`, `confidence`, `is_thread_continuation` (keep `is_ap` if already used)
-- [ ] `WorkflowDeps`: `settings`, `llm`, `email`, `tickets`, `sap`, `audit`, `senders`, `drafts`
+- [x] `TicketStatus`: `open`, `awaiting_human`, `awaiting_sender_reply`, `resolved`, `escalated`, `quarantined`, `discarded`, `delegated`
+- [x] `Intent`, `SenderType`, `InvoiceStage`, `InvoiceStatus`, `InvoiceMatchResult`, `DraftTarget`, `HumanReviewAction`, `AuditAction`
+- [x] Models: `Sender`, `RoutingRule`, `Ticket` (full fields), `Invoice`, `ResponseDraft`, `AuditEntry`, `HumanReview`
+- [x] Ticket fields: `intent`, `language`, `assigned_operator_id`, `confidence`, `is_thread_continuation` (kept `is_ap`)
+- [x] `WorkflowDeps`: `settings`, `llm`, `email`, `tickets`, `sap`, `audit`, `senders`, `drafts`
 
 Graph state (`app/graph/state.py`) may grow later (Days 4–5) toward `ProcessingContext` fields. This day: types exist; **still no `deps` in state**.
 
@@ -46,12 +46,11 @@ Human reviews can live on a small repo (assistant: `HumanReviewRepo`) even if yo
 
 ## 3. Adapters
 
-- [ ] `MockSAPAdapter` — load `fixtures/sap_mock/` (copy or symlink from assistant; **do not regenerate**)
-- [ ] `MockSenderDirectory` — load `fixtures/senders/`
-- [ ] In-memory: tickets (already), plus audit, drafts for unit tests
-- [ ] SQLModel tables matching assistant `app/adapters/db_models.py`:  
-  `tickets` (extra columns), `senders`, `routing_rules`, `invoice_cache`, `response_drafts`, `audit_entries`, `human_reviews`
-- [ ] Postgres repos: `TicketRepo`, `AuditRepo`, `DraftRepo`, `HumanReviewRepo` (and sender/invoice if you persist them; assistant runtime still uses **fixture JSON** for senders/SAP)
+- [x] `MockSAPAdapter` — `fixtures/sap_mock/` (lab copy; replace from assistant if you have it)
+- [x] `MockSenderDirectory` — `fixtures/senders/`
+- [x] In-memory: tickets, audit, drafts
+- [x] SQLModel tables: `tickets` extra columns, `senders`, `routing_rules`, `invoice_cache`, `response_drafts`, `audit_entries`, `human_reviews`
+- [x] Postgres repos: `TicketRepo`, `AuditRepo`, `DraftRepo`, `HumanReviewRepo`
 
 Optional:
 
@@ -63,12 +62,12 @@ Wiring: `build_workflow_deps(session)` returns all **seven** ports.
 
 ## 4. Alembic — second migration
 
-- [ ] `alembic revision --autogenerate -m "full_schema"` (or equivalent)
-- [ ] Ticket extra columns: `intent`, `language`, `assigned_operator_id`, `confidence`, `is_thread_continuation`
-- [ ] New tables as above; FKs `ticket_id` / `draft_id` like assistant
-- [ ] Unique `message_id` retained
-- [ ] `alembic upgrade head`
-- [ ] Note in [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md): extra tables visible in `lab` on **5434**
+- [x] `alembic revision` `a1b2c3d4e5f6_full_schema.py`
+- [x] Ticket extra columns: `intent`, `language`, `assigned_operator_id`, `confidence`, `is_thread_continuation`
+- [x] New tables + FKs `ticket_id` / `draft_id`
+- [x] Unique `message_id` retained
+- [x] `alembic upgrade head`
+- [x] Note in [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md)
 
 Gate: pytest against Postgres for ticket extra fields + audit append/get (compose up).
 
@@ -76,8 +75,8 @@ Gate: pytest against Postgres for ticket extra fields + audit append/get (compos
 
 ## 5. Fixtures and settings
 
-- [ ] Copy/link `p2p-ai-assistant/fixtures/` (`emails/`, `sap_mock/`, `senders/`, invoices if referenced)
-- [ ] Settings already on lab `settings.py` become **canonical**: `CONFIDENCE_THRESHOLD`, `NEAR_DUE_DAYS`, `VAT_RATE`, `MATCH_VALUE_TOLERANCE_PCT` / `ABS`, `DEFAULT_OPERATOR_ID`, `INVOICING_EMAIL`, `PAYMENTS_EMAIL`, `NYLAS_SEND_ENABLED`, `SPF_DKIM_ENABLED`, `INTENT_MIN_CONFIDENCE`, LLM timeouts
+- [x] Lab fixtures under `fixtures/` (`sap_mock/`, `senders/`); replace from assistant if available
+- [x] Settings already on lab `settings.py` are canonical (`CONFIDENCE_THRESHOLD`, `NEAR_DUE_DAYS`, …)
 
 Day 7 will add `RESOLUTION_RETRY_MIN_CONFIDENCE` (and optional retry cap). **Do not** add the retry loop this day.
 
@@ -85,11 +84,11 @@ Day 7 will add `RESOLUTION_RETRY_MIN_CONFIDENCE` (and optional retry cap). **Do 
 
 ## Definition of Done — Day 3
 
-- [ ] `WorkflowDeps` has 7 ports; `build_workflow_deps` wires mocks + Postgres tickets/audit/drafts
-- [ ] Second migration applied; pgAdmin shows new tables
-- [ ] Day 1–2 tests still pass (adapt ticket model/status if needed)
-- [ ] No Streamlit, no new graph nodes required
-- [ ] Fixtures present under this repo (or documented relative path)
+- [x] `WorkflowDeps` has 7 ports; `build_workflow_deps` wires mocks + Postgres tickets/audit/drafts
+- [x] Second migration applied; pgAdmin shows new tables
+- [x] Day 1–2 tests still pass (ticket extras have defaults)
+- [x] No Streamlit, no new graph nodes required
+- [x] Fixtures present under this repo (or documented relative path)
 
 ---
 

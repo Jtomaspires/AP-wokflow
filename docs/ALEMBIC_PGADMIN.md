@@ -123,3 +123,22 @@ TicketTable (Python)  →  alembic revision  →  file in versions/
                               ↓
                     Postgres lab:5434  →  pgAdmin (View/Edit Data)
 ```
+
+---
+
+## Day 3 — `full_schema` (`a1b2c3d4e5f6`)
+
+Second migration on the same `lab` database (port **5434**).
+
+- `tickets` extra columns: `intent`, `language`, `assigned_operator_id`, `confidence`, `is_thread_continuation`
+- new tables: `senders`, `routing_rules`, `invoice_cache`, `response_drafts`, `audit_entries`, `human_reviews`
+- unique `message_id` on tickets is unchanged
+
+Runtime senders/SAP still come from `fixtures/` JSON, not those cache tables.
+
+```bash
+alembic upgrade head
+alembic current
+```
+
+In pgAdmin, refresh schema `public` — you should see the extra tables next to `tickets`.

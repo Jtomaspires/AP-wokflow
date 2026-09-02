@@ -5,22 +5,21 @@ from uuid import UUID
 import pytest
 
 from app.adapters.memory_ticket_store import InMemoryTicketStore
-from app.adapters.mock_email import MockEmailAdapter
 from app.adapters.mock_llm import MockLLMAdapter
 from app.domain.deps import WorkflowDeps
 from app.domain.enums import TicketStatus
 from app.graph.nodes.ingest import make_ingest_node
 from app.graph.nodes.triage import make_triage_node
 from settings import Settings
+from tests.helpers import make_test_deps
 
 
 def _deps(store: InMemoryTicketStore, llm: MockLLMAdapter) -> WorkflowDeps:
-    return WorkflowDeps(
+    return make_test_deps(
         settings=Settings(
             SECURITY_CHECK_ENABLED=False,
             TRIAGE_DISCARD_MIN_CONFIDENCE=0.8,
         ),
-        email=MockEmailAdapter(),
         tickets=store,
         llm=llm,
     )

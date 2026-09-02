@@ -3,21 +3,13 @@
 from uuid import UUID
 
 from app.adapters.memory_ticket_store import InMemoryTicketStore
-from app.adapters.mock_email import MockEmailAdapter
-from app.adapters.mock_llm import MockLLMAdapter
-from app.domain.deps import WorkflowDeps
 from app.domain.enums import TicketStatus
 from app.graph.nodes.ingest import make_ingest_node
-from settings import Settings
+from tests.helpers import make_test_deps
 
 
-def _deps(store: InMemoryTicketStore | None = None) -> WorkflowDeps:
-    return WorkflowDeps(
-        settings=Settings(),
-        email=MockEmailAdapter(),
-        tickets=store or InMemoryTicketStore(),
-        llm=MockLLMAdapter(),
-    )
+def _deps(store: InMemoryTicketStore | None = None):
+    return make_test_deps(tickets=store or InMemoryTicketStore())
 
 
 def _payload(**overrides) -> dict:

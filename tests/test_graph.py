@@ -5,12 +5,12 @@ from uuid import UUID
 import pytest
 
 from app.adapters.memory_ticket_store import InMemoryTicketStore
-from app.adapters.mock_email import MockEmailAdapter
 from app.adapters.mock_llm import MockLLMAdapter
 from app.domain.deps import WorkflowDeps
 from app.domain.enums import TicketStatus
 from app.graph.app import build_graph
 from settings import Settings
+from tests.helpers import make_test_deps
 
 
 def _deps(
@@ -20,13 +20,12 @@ def _deps(
     security_enabled: bool = True,
     whitelist: str = "acme-supplies.com",
 ) -> WorkflowDeps:
-    return WorkflowDeps(
+    return make_test_deps(
         settings=Settings(
             SECURITY_CHECK_ENABLED=security_enabled,
             SENDER_DOMAIN_WHITELIST=whitelist,
             TRIAGE_DISCARD_MIN_CONFIDENCE=0.8,
         ),
-        email=MockEmailAdapter(),
         tickets=store,
         llm=llm,
     )

@@ -2,6 +2,9 @@ from sqlmodel import Session
 
 from app.adapters.mock_email import MockEmailAdapter
 from app.adapters.mock_llm import MockLLMAdapter
+from app.adapters.mock_sap import MockSAPAdapter
+from app.adapters.mock_sender_directory import MockSenderDirectory
+from app.adapters.postgres_repos import AuditRepo, DraftRepo
 from app.adapters.postgres_tickets import TicketRepo
 from app.domain.deps import WorkflowDeps
 from app.ports.llm_port import LLMPort
@@ -18,7 +21,11 @@ def build_workflow_deps(
 ) -> WorkflowDeps:
     return WorkflowDeps(
         settings=settings,
+        llm=llm or MockLLMAdapter(responses=[_DEFAULT_TRIAGE]),
         email=MockEmailAdapter(),
         tickets=TicketRepo(session),
-        llm=llm or MockLLMAdapter(responses=[_DEFAULT_TRIAGE]),
+        sap=MockSAPAdapter(),
+        audit=AuditRepo(session),
+        senders=MockSenderDirectory(),
+        drafts=DraftRepo(session),
     )
