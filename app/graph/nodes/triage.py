@@ -1,17 +1,11 @@
-"""Triage node: first LLM call — is this an AP email?
-
-Uses ``LLMPort`` + ``TriageOutput``. Not AP with confidence at or above
-``TRIAGE_DISCARD_MIN_CONFIDENCE`` → ``discarded`` and stop. Otherwise the
-ticket stays OPEN (including low-confidence non-AP). Async so the compiled
-graph will use ``ainvoke``.
-"""
+"""Triage: AP vs discard; AP continues to intent."""
 
 from datetime import UTC, datetime
-from uuid import UUID
 
 from app.domain.deps import WorkflowDeps
-from app.domain.enums import TicketStatus
+from app.domain.enums import AuditAction, TicketStatus
 from app.domain.schemas import TriageOutput
+from app.graph.nodes._ticket import load_ticket, missing_ticket
 from app.graph.state import LabState
 
 _SYSTEM_PROMPT = (
@@ -23,13 +17,9 @@ _SYSTEM_PROMPT = (
 
 def make_triage_node(deps: WorkflowDeps):
     async def triage(state: LabState) -> dict:
-        raw_id = state.get("ticket_id")
-        if not raw_id:
-            return {"should_stop": True, "stop_reason": "missing_ticket"}
-
-        ticket = deps.tickets.get_by_id(UUID(raw_id))
+        ticket = load_ticket(deps, state)
         if ticket is None:
-            return {"should_stop": True, "stop_reason": "missing_ticket"}
+            return missing_ticket()
 
         output = await deps.llm.generate(
             system_prompt=_SYSTEM_PROMPT,
@@ -53,6 +43,10 @@ def make_triage_node(deps: WorkflowDeps):
                 "should_stop": True,
                 "ticket_id": str(saved.id),
                 "stop_reason": "discarded",
+                "route": "end",
+                "audit_action": AuditAction.DISCARD.value,
+                "audit_confidence": output.confidence,
+                "audit_metadata": {"is_ap": False},
             }
 
         saved = deps.tickets.save_ticket(ticket)
@@ -60,6 +54,10 @@ def make_triage_node(deps: WorkflowDeps):
             "should_stop": False,
             "ticket_id": str(saved.id),
             "stop_reason": None,
+            "route": "intent",
+            "audit_action": AuditAction.PASS.value,
+            "audit_confidence": output.confidence,
+            "audit_metadata": {"is_ap": True},
         }
 
     return triage
