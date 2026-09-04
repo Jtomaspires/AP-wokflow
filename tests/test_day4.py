@@ -42,6 +42,7 @@ async def test_known_intent_goes_to_sender_and_mine():
             "extracted_amount": 10.0,
         }
     )
+    llm.enqueue({"generated_text": "We could not find that invoice."})
     deps = make_test_deps(tickets=store, llm=llm)
     final = await build_graph(deps).ainvoke({"raw_payload": _intent_payload("msg-intent-ok")})
     ticket = store.get_by_id(UUID(final["ticket_id"]))
@@ -61,6 +62,7 @@ async def test_unknown_intent_skips_identity():
     llm = MockLLMAdapter()
     llm.enqueue({"is_ap": True, "confidence": 0.95})
     llm.enqueue({"intent": "unknown", "confidence": 0.9, "language": "en"})
+    llm.enqueue({"generated_text": "We could not find that invoice."})
     deps = make_test_deps(tickets=store, llm=llm)
     final = await build_graph(deps).ainvoke({"raw_payload": _intent_payload("msg-intent-unk")})
     assert final["skip_identity"] is True
@@ -76,6 +78,7 @@ async def test_low_confidence_intent_skips_identity():
     llm = MockLLMAdapter()
     llm.enqueue({"is_ap": True, "confidence": 0.95})
     llm.enqueue({"intent": "payment_status", "confidence": 0.2, "language": "en"})
+    llm.enqueue({"generated_text": "We could not find that invoice."})
     deps = make_test_deps(
         tickets=store,
         llm=llm,
@@ -154,6 +157,7 @@ def test_postgres_audit_rows_for_happy_path():
     llm = MockLLMAdapter()
     llm.enqueue({"is_ap": True, "confidence": 0.95})
     llm.enqueue({"intent": "payment_status", "confidence": 0.9, "language": "en"})
+    llm.enqueue({"generated_text": "We could not find that invoice."})
     message_id = f"msg-d4-audit-{uuid4().hex[:8]}"
     engine = create_engine(app_settings.DATABASE_URL, pool_pre_ping=True)
     with Session(engine) as session:
@@ -181,4 +185,7 @@ def test_postgres_audit_rows_for_happy_path():
     assert "thread" in nodes
     assert "triage" in nodes
     assert "intent" in nodes
+    assert "resolution" in nodes
+    assert "draft" in nodes
+    assert "hitl" in nodes
     assert len(rows) >= 5

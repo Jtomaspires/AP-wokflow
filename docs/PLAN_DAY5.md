@@ -6,7 +6,7 @@
 >
 > Previous: [PLAN_DAY4.md](PLAN_DAY4.md). Next: [PLAN_DAY6.md](PLAN_DAY6.md). Charter: [README.md](README.md).
 
-**Status:** planned.
+**Status:** done.
 
 ---
 
@@ -35,13 +35,13 @@ File: `app/graph/nodes/resolution.py`
 Reference: `p2p-ai-assistant/app/workflow/nodes/resolution.py`  
 Util: `normalize_reference` (copy the function, not the Launchpad node class).
 
-- [ ] Load SAP approval + posted via `SAPPort`
-- [ ] Match: **exact ref** → **fuzzy ≥ 0.85** → **amount ± `MATCH_VALUE_TOLERANCE_*` + supplier**
-- [ ] Both sources / ambiguous / TOO_MANY → `requires_hitl`
-- [ ] VAT discrepancy vs extracted amount: LLM **notes only** (`VATReasoningOutput`), `VAT_DISCREPANCY`, HITL
-- [ ] PAID without clearing → HITL
-- [ ] Set `is_overdue` / `is_near_due` from `NEAR_DUE_DAYS` for Draft
-- [ ] Audit `RESOLVE` with `match_result`, `match_method`, `invoice_ref`
+- [x] Load SAP approval + posted via `SAPPort`
+- [x] Match: **exact ref** → **fuzzy ≥ 0.85** → **amount ± `MATCH_VALUE_TOLERANCE_*` + supplier**
+- [x] Both sources / ambiguous / TOO_MANY → `requires_hitl`
+- [x] VAT discrepancy vs extracted amount: LLM **notes only** (`VATReasoningOutput`), `VAT_DISCREPANCY`, HITL
+- [x] PAID without clearing → HITL
+- [x] Set `is_overdue` / `is_near_due` from `NEAR_DUE_DAYS` for Draft
+- [x] Audit `RESOLVE` with `match_result`, `match_method`, `invoice_ref`
 
 **Do not** widen tolerances and re-run the ladder this day.
 
@@ -66,18 +66,18 @@ Reference: `DraftNode._pick_target`
 | POSTED PAID + clearing | `SENDER` + `attach_payment_proof` |
 | POSTED PAID no clearing | HITL |
 
-- [ ] LLM only writes `generated_text` (`DraftOutput`)
-- [ ] Persist `ResponseDraft` via `DraftPort`
-- [ ] Prompts: reuse assistant `app/llm/prompts.py` (copy into `app/llm/` in this repo)
+- [x] LLM only writes `generated_text` (`DraftOutput`)
+- [x] Persist `ResponseDraft` via `DraftPort`
+- [x] Prompts: reuse assistant `app/llm/prompts.py` (copy into `app/llm/` in this repo)
 
 ---
 
 ## HITL + Send
 
-- [ ] Hitl: set `AWAITING_HUMAN`, save ticket, `should_stop` / interrupt; audit `HITL`
-- [ ] v1 **never** auto-sends (`CONFIDENCE_THRESHOLD` unused for send)
-- [ ] Send (after approve): mock resolve unless `NYLAS_SEND_ENABLED`; record `HumanReview`; ticket `RESOLVED`; audit `SEND` / `APPROVE` / `APPROVE_EDIT`
-- [ ] Escalate: `ESCALATED`, review `ESCALATED_TO_EMAIL`, no send
+- [x] Hitl: set `AWAITING_HUMAN`, save ticket, `should_stop` / interrupt; audit `HITL`
+- [x] v1 **never** auto-sends (`CONFIDENCE_THRESHOLD` unused for send)
+- [x] Send (after approve): mock resolve unless `NYLAS_SEND_ENABLED`; record `HumanReview`; ticket `RESOLVED`; audit `SEND` / `APPROVE` / `APPROVE_EDIT`
+- [x] Escalate: `ESCALATED`, review `ESCALATED_TO_EMAIL`, no send
 
 ---
 
@@ -85,14 +85,14 @@ Reference: `DraftNode._pick_target`
 
 Finish Day 2 runtime if still open, then:
 
-- [ ] `GET /health`
-- [ ] `POST /webhook/mock` → `process_email.delay`; sync fallback if Redis down (assistant `main.py`)
-- [ ] `GET /tickets`, `GET /tickets/{id}` (ticket + sender + draft + invoice + audit summaries)
-- [ ] `GET /tickets/{id}/draft`
-- [ ] `POST /tickets/{id}/approve` body `{ operator_id, final_text? }`
-- [ ] `POST /tickets/{id}/escalate` body `{ operator_id }`
-- [ ] `GET /stats` (counts by status) — assistant has it; include for parity
-- [ ] 404 ticket missing; **409** if not `AWAITING_HUMAN` or no draft
+- [x] `GET /health`
+- [x] `POST /webhook/mock` → `process_email.delay`; sync fallback if Redis down (assistant `main.py`)
+- [x] `GET /tickets`, `GET /tickets/{id}` (ticket + sender + draft + invoice + audit summaries)
+- [x] `GET /tickets/{id}/draft`
+- [x] `POST /tickets/{id}/approve` body `{ operator_id, final_text? }`
+- [x] `POST /tickets/{id}/escalate` body `{ operator_id }`
+- [x] `GET /stats` (counts by status) — assistant has it; include for parity
+- [x] 404 ticket missing; **409** if not `AWAITING_HUMAN` or no draft
 
 No `app/dashboard/`. CORS like assistant is fine for a future UI; do not add Streamlit.
 
@@ -100,11 +100,11 @@ No `app/dashboard/`. CORS like assistant is fine for a future UI; do not add Str
 
 ## Definition of Done — Day 5
 
-- [ ] Inbound graph: … → resolution → draft → hitl
-- [ ] Approve/escalate work via HTTP without Streamlit
-- [ ] Draft table matches assistant
-- [ ] Resolution tests pass **without** Day 7 retry
-- [ ] Celery worker still runs the **inbound** graph only
+- [x] Inbound graph: … → resolution → draft → hitl
+- [x] Approve/escalate work via HTTP without Streamlit
+- [x] Draft table matches assistant
+- [x] Resolution tests pass **without** Day 7 retry
+- [x] Celery worker still runs the **inbound** graph only
 
 ---
 

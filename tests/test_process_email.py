@@ -20,7 +20,7 @@ def _payload(*, from_email: str, message_id: str) -> dict:
     }
 
 
-def test_process_email_sync_persists_open_ap_ticket():
+def test_process_email_sync_persists_awaiting_human_ap_ticket():
     llm = MockLLMAdapter()
     llm.enqueue({"is_ap": True, "confidence": 0.95})
     llm.enqueue(
@@ -32,6 +32,7 @@ def test_process_email_sync_persists_open_ap_ticket():
             "extracted_amount": 1250.0,
         }
     )
+    llm.enqueue({"generated_text": "Thank you. We are reviewing the invoice."})
     message_id = f"msg-celery-ap-{uuid4().hex[:8]}"
 
     result = run_process_email(
@@ -39,9 +40,9 @@ def test_process_email_sync_persists_open_ap_ticket():
         llm=llm,
     )
 
-    assert result["status"] == TicketStatus.OPEN.value
+    assert result["status"] == TicketStatus.AWAITING_HUMAN.value
     assert result["ticket_id"] is not None
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3
 
     engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
     with Session(engine) as session:
@@ -50,7 +51,7 @@ def test_process_email_sync_persists_open_ap_ticket():
 
     assert found is not None
     assert found.message_id == message_id
-    assert found.status is TicketStatus.OPEN
+    assert found.status is TicketStatus.AWAITING_HUMAN
     assert found.is_ap is True
 
 

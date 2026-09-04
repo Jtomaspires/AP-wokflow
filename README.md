@@ -1,6 +1,6 @@
-# p2p-ai-langraph (Day 2)
+# p2p-ai-langraph
 
-Mini-lab: **POST /ingest → Redis → Celery → LangGraph (ingest → security → triage) → Postgres `tickets`**.
+**POST /ingest** or **POST /webhook/mock** → Redis → Celery → LangGraph (through HITL) → Postgres. Approve/escalate via HTTP; send is not on the inbound spine.
 
 Triage talks to `LLMPort`, not `openai`. Security uses only `settings` + ticket store (sender-domain whitelist).
 
