@@ -51,4 +51,12 @@ curl -s http://127.0.0.1:8000/tickets/<ticket-uuid>
 
 Unknown domain (`evil.example`) → `quarantined` and triage does not run.
 
+Eval (in-memory LangGraph, no live LLM):
+
+```powershell
+python scripts/run_eval.py
+```
+
+Writes `golden_dataset/baselines/v1.json` and exits 1 if workflow success < 0.80. Shadow: `python scripts/run_shadow.py`.
+
 Plans: [docs/README.md](docs/README.md).

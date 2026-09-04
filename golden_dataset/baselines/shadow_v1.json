@@ -1,0 +1,784 @@
+{
+  "success": 1.0,
+  "threshold": 0.8,
+  "count": 20,
+  "per_dimension": {
+    "intent": 1.0,
+    "ticket_status": 1.0,
+    "invoice_resolution": 1.0,
+    "draft_target": 1.0,
+    "to_email": 1.0,
+    "attach_payment_proof": 1.0,
+    "human_action_needed": 1.0
+  },
+  "results": [
+    {
+      "id": "001",
+      "path": "fixtures/emails/001_invoice_not_found.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "002",
+      "path": "fixtures/emails/002_in_approval_on_time.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "003",
+      "path": "fixtures/emails/003_posted_paid_clearing.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": true,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "004",
+      "path": "fixtures/emails/004_unknown_domain_quarantine.json",
+      "actual": {
+        "intent": null,
+        "ticket_status": "quarantined",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": null,
+        "ticket_status": "quarantined",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": []
+    },
+    {
+      "id": "005",
+      "path": "fixtures/emails/005_not_ap_discard.json",
+      "actual": {
+        "intent": null,
+        "ticket_status": "discarded",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": null,
+        "ticket_status": "discarded",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput"
+      ]
+    },
+    {
+      "id": "006",
+      "path": "fixtures/emails/006_delegate_other_operator.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "delegated",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "delegated",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput"
+      ]
+    },
+    {
+      "id": "007",
+      "path": "fixtures/emails/007_vat_discrepancy.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "vat_discrepancy",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "vat_discrepancy",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "VATReasoningOutput"
+      ]
+    },
+    {
+      "id": "008",
+      "path": "fixtures/emails/008_multiple_sources.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "multiple",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "multiple",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput"
+      ]
+    },
+    {
+      "id": "009",
+      "path": "fixtures/emails/009_posted_blocked.json",
+      "actual": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "payments",
+        "to_email": "payments@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "payments",
+        "to_email": "payments@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "010",
+      "path": "fixtures/emails/010_in_approval_overdue_owner.json",
+      "actual": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "approval_owners",
+        "to_email": "ap-owner@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "approval_owners",
+        "to_email": "ap-owner@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "011",
+      "path": "fixtures/emails/011_unknown_intent.json",
+      "actual": {
+        "intent": "unknown",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "unknown",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "012",
+      "path": "fixtures/emails/012_low_confidence_intent.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "013",
+      "path": "fixtures/emails/013_delay_reason.json",
+      "actual": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "014",
+      "path": "fixtures/emails/014_future_timing.json",
+      "actual": {
+        "intent": "future_timing",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "future_timing",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "015",
+      "path": "fixtures/emails/015_fuzzy_ref.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "multiple",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "multiple",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput"
+      ]
+    },
+    {
+      "id": "016",
+      "path": "fixtures/emails/016_amount_supplier_match.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "017",
+      "path": "fixtures/emails/017_spf_dkim_fail.json",
+      "actual": {
+        "intent": null,
+        "ticket_status": "quarantined",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": null,
+        "ticket_status": "quarantined",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": []
+    },
+    {
+      "id": "018",
+      "path": "fixtures/emails/018_posted_partial.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "019",
+      "path": "fixtures/emails/019_paid_no_clearing.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput"
+      ]
+    },
+    {
+      "id": "020",
+      "path": "fixtures/emails/020_overdue_no_owner.json",
+      "actual": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true,
+        "generated_text": null
+      },
+      "expected": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput"
+      ]
+    }
+  ],
+  "graph": "langgraph",
+  "retry_enabled": false,
+  "mode": "shadow"
+}
