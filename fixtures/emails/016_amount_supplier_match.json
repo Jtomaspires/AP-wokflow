@@ -1,0 +1,25 @@
+{
+  "id": "016",
+  "name": "amount_supplier_match",
+  "input": {
+    "thread_id": "thread-eval-016",
+    "message_id": "msg-eval-016",
+    "from": "billing@acme-supplies.com",
+    "subject": "Unknown reference",
+    "body": "Invoice UNKNOWN-99 for 1250.50 EUR from ACME.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "UNKNOWN-99",
+    "extracted_amount": 1250.5,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

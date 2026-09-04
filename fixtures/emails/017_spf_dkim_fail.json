@@ -1,0 +1,27 @@
+{
+  "id": "017",
+  "name": "spf_dkim_fail",
+  "input": {
+    "thread_id": "thread-eval-017",
+    "message_id": "msg-eval-017",
+    "from": "billing@acme-supplies.com",
+    "subject": "Invoice INV-2026-0001",
+    "body": "Please pay INV-2026-0001 1250.",
+    "received_at": "2026-09-04T10:00:00+00:00",
+    "spf_pass": false,
+    "dkim_pass": false
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": null,
+    "ticket_status": "quarantined",
+    "invoice_resolution": null,
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": false
+  },
+  "settings": {
+    "SPF_DKIM_ENABLED": true
+  }
+}

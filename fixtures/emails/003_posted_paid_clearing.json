@@ -1,0 +1,25 @@
+{
+  "id": "003",
+  "name": "posted_paid_clearing",
+  "input": {
+    "thread_id": "thread-eval-003",
+    "message_id": "msg-eval-003",
+    "from": "billing@acme-supplies.com",
+    "subject": "Was INV-2026-0002 paid?",
+    "body": "Need proof for INV-2026-0002 / 980.50 EUR.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-0002",
+    "extracted_amount": 980.5,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": true,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

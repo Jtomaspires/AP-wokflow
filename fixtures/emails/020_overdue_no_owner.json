@@ -1,0 +1,24 @@
+{
+  "id": "020",
+  "name": "overdue_no_owner",
+  "input": {
+    "thread_id": "thread-eval-020",
+    "message_id": "msg-eval-020",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-2026-NOOWNER",
+    "body": "INV-2026-NOOWNER 400 EUR is overdue.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "delay_reason",
+    "extracted_ref": "INV-2026-NOOWNER",
+    "extracted_amount": 400.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": true
+  }
+}

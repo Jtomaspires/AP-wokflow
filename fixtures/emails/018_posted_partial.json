@@ -1,0 +1,25 @@
+{
+  "id": "018",
+  "name": "posted_partial",
+  "input": {
+    "thread_id": "thread-eval-018",
+    "message_id": "msg-eval-018",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-2026-PARTIAL",
+    "body": "Partial payment on INV-2026-PARTIAL 300 EUR.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-PARTIAL",
+    "extracted_amount": 300.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

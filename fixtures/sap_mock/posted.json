@@ -13,5 +13,50 @@
     "payment_document": "PAY-9001",
     "payment_date": "2026-08-05",
     "payment_proof_ref": "PROOF-9001"
+  },
+  {
+    "invoice_ref": "INV-MULTI",
+    "supplier_name": "ACME Supplies",
+    "amount": "100.00",
+    "stage": "posted",
+    "currency": "EUR",
+    "status": "pending",
+    "sap_id": "SAP-POST-006",
+    "company_code": "1000",
+    "due_date": "2026-12-01"
+  },
+  {
+    "invoice_ref": "INV-2026-BLOCKED",
+    "supplier_name": "ACME Supplies",
+    "amount": "220.00",
+    "stage": "posted",
+    "currency": "EUR",
+    "status": "blocked",
+    "sap_id": "SAP-POST-007",
+    "company_code": "1000",
+    "payment_blocking_reason": "PRICE",
+    "due_date": "2026-12-01"
+  },
+  {
+    "invoice_ref": "INV-2026-PARTIAL",
+    "supplier_name": "ACME Supplies",
+    "amount": "300.00",
+    "stage": "posted",
+    "currency": "EUR",
+    "status": "partial",
+    "sap_id": "SAP-POST-008",
+    "company_code": "1000",
+    "due_date": "2026-12-01"
+  },
+  {
+    "invoice_ref": "INV-2026-PAID-NC",
+    "supplier_name": "ACME Supplies",
+    "amount": "150.00",
+    "stage": "posted",
+    "currency": "EUR",
+    "status": "paid",
+    "sap_id": "SAP-POST-009",
+    "company_code": "1000",
+    "due_date": "2026-08-01"
   }
 ]

@@ -1,0 +1,25 @@
+{
+  "id": "007",
+  "name": "vat_discrepancy",
+  "input": {
+    "thread_id": "thread-eval-007",
+    "message_id": "msg-eval-007",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-2026-0001 amount",
+    "body": "We billed 1537.50 including VAT for INV-2026-0001.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1537.5,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "vat_discrepancy",
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": true,
+    "vat_notes": "Extracted amount looks VAT-inclusive."
+  }
+}

@@ -1,5 +1,6 @@
 # Fixtures
 
-Lab copies of assistant-style JSON for **SAP** and **senders**. Runtime still uses these files (not the `senders` / `invoice_cache` tables) via `MockSAPAdapter` and `MockSenderDirectory`.
+Lab copies of assistant-style JSON for **SAP**, **senders**, and **emails** (Day 6 golden set). Runtime SAP/senders still load from `sap_mock/` and `senders/` via `MockSAPAdapter` / `MockSenderDirectory`.
 
-If you have `p2p-ai-assistant`, replace this folder with a copy or symlink of `p2p-ai-assistant/fixtures/` (`emails/`, `sap_mock/`, `senders/`). Do **not** regenerate SAP dumps.
+If you have `p2p-ai-assistant`, you may replace `emails/` with the assistant copy. Do **not** drop INV-2026-0001 / INV-2026-0002 from SAP dumps; extra eval invoices are additive.
+

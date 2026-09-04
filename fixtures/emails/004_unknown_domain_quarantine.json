@@ -1,0 +1,22 @@
+{
+  "id": "004",
+  "name": "unknown_domain_quarantine",
+  "input": {
+    "thread_id": "thread-eval-004",
+    "message_id": "msg-eval-004",
+    "from": "phish@evil.example",
+    "subject": "Invoice",
+    "body": "Pay now",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": null,
+    "ticket_status": "quarantined",
+    "invoice_resolution": null,
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": false
+  }
+}

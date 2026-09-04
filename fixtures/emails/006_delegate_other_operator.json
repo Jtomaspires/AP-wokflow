@@ -1,0 +1,24 @@
+{
+  "id": "006",
+  "name": "delegate_other_operator",
+  "input": {
+    "thread_id": "thread-eval-006",
+    "message_id": "msg-eval-006",
+    "from": "other@vendor.com",
+    "subject": "INV-2026-0001 status",
+    "body": "Please pay INV-2026-0001 1250 EUR.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1250.0,
+    "ticket_status": "delegated",
+    "invoice_resolution": null,
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": false
+  }
+}

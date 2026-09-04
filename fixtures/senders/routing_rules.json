@@ -4,5 +4,11 @@
     "operator_id": "op_joao",
     "email": "billing@acme-supplies.com",
     "domain": "acme-supplies.com"
+  },
+  {
+    "id": "rule-other",
+    "operator_id": "op_other",
+    "email": "other@vendor.com",
+    "domain": "vendor.com"
   }
 ]

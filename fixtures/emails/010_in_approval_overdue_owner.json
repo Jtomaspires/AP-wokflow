@@ -1,0 +1,25 @@
+{
+  "id": "010",
+  "name": "in_approval_overdue_owner",
+  "input": {
+    "thread_id": "thread-eval-010",
+    "message_id": "msg-eval-010",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-2026-OVERDUE",
+    "body": "INV-2026-OVERDUE 500 EUR is late.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "delay_reason",
+    "extracted_ref": "INV-2026-OVERDUE",
+    "extracted_amount": 500.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "approval_owners",
+    "to_email": "ap-owner@company.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

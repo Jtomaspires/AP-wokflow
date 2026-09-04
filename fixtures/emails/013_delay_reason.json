@@ -1,0 +1,25 @@
+{
+  "id": "013",
+  "name": "delay_reason",
+  "input": {
+    "thread_id": "thread-eval-013",
+    "message_id": "msg-eval-013",
+    "from": "billing@acme-supplies.com",
+    "subject": "Why is INV-2026-0001 delayed?",
+    "body": "Need delay reason for INV-2026-0001 1250 EUR.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "delay_reason",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1250.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

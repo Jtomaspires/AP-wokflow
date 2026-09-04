@@ -1,0 +1,25 @@
+{
+  "id": "002",
+  "name": "in_approval_on_time",
+  "input": {
+    "thread_id": "thread-eval-002",
+    "message_id": "msg-eval-002",
+    "from": "billing@acme-supplies.com",
+    "subject": "Payment status INV-2026-0001",
+    "body": "Please confirm payment status for INV-2026-0001 amount 1250.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1250.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

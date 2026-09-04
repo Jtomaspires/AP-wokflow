@@ -1,0 +1,25 @@
+{
+  "id": "001",
+  "name": "invoice_not_found",
+  "input": {
+    "thread_id": "thread-eval-001",
+    "message_id": "msg-eval-001",
+    "from": "billing@acme-supplies.com",
+    "subject": "Status of INV-NOPE",
+    "body": "Where is invoice INV-NOPE for 10 EUR?",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-NOPE",
+    "extracted_amount": 10.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "not_found",
+    "draft_target": "invoicing",
+    "to_email": "invoicing@company.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

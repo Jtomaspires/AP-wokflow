@@ -1,0 +1,24 @@
+{
+  "id": "019",
+  "name": "paid_no_clearing",
+  "input": {
+    "thread_id": "thread-eval-019",
+    "message_id": "msg-eval-019",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-2026-PAID-NC",
+    "body": "INV-2026-PAID-NC 150 EUR shows paid.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-PAID-NC",
+    "extracted_amount": 150.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": true
+  }
+}

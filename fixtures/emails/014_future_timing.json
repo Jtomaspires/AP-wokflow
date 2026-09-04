@@ -1,0 +1,25 @@
+{
+  "id": "014",
+  "name": "future_timing",
+  "input": {
+    "thread_id": "thread-eval-014",
+    "message_id": "msg-eval-014",
+    "from": "billing@acme-supplies.com",
+    "subject": "When will INV-2026-0001 be paid?",
+    "body": "Future timing for INV-2026-0001 1250 EUR.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "future_timing",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1250.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

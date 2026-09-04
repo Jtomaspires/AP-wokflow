@@ -11,5 +11,42 @@
     "approval_step": "L1",
     "due_date": "2026-09-15",
     "approval_owner_email": "ap-owner@company.com"
+  },
+  {
+    "invoice_ref": "INV-2026-OVERDUE",
+    "supplier_name": "ACME Supplies",
+    "amount": "500.00",
+    "stage": "in_approval",
+    "currency": "EUR",
+    "status": "pending",
+    "sap_id": "SAP-APP-003",
+    "company_code": "1000",
+    "approval_step": "L1",
+    "due_date": "2026-08-01",
+    "approval_owner_email": "ap-owner@company.com"
+  },
+  {
+    "invoice_ref": "INV-2026-NOOWNER",
+    "supplier_name": "ACME Supplies",
+    "amount": "400.00",
+    "stage": "in_approval",
+    "currency": "EUR",
+    "status": "pending",
+    "sap_id": "SAP-APP-004",
+    "company_code": "1000",
+    "approval_step": "L1",
+    "due_date": "2026-08-01"
+  },
+  {
+    "invoice_ref": "INV-MULTI",
+    "supplier_name": "ACME Supplies",
+    "amount": "100.00",
+    "stage": "in_approval",
+    "currency": "EUR",
+    "status": "pending",
+    "sap_id": "SAP-APP-005",
+    "company_code": "1000",
+    "due_date": "2026-12-01",
+    "approval_owner_email": "ap-owner@company.com"
   }
 ]

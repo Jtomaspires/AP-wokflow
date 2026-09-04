@@ -1,0 +1,24 @@
+{
+  "id": "008",
+  "name": "multiple_sources",
+  "input": {
+    "thread_id": "thread-eval-008",
+    "message_id": "msg-eval-008",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-MULTI",
+    "body": "Status of INV-MULTI 100 EUR.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-MULTI",
+    "extracted_amount": 100.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "multiple",
+    "draft_target": null,
+    "to_email": null,
+    "attach_payment_proof": null,
+    "human_action_needed": true
+  }
+}

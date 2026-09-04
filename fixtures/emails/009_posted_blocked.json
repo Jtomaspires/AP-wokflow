@@ -1,0 +1,25 @@
+{
+  "id": "009",
+  "name": "posted_blocked",
+  "input": {
+    "thread_id": "thread-eval-009",
+    "message_id": "msg-eval-009",
+    "from": "billing@acme-supplies.com",
+    "subject": "INV-2026-BLOCKED",
+    "body": "Why is INV-2026-BLOCKED for 220 EUR blocked?",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "delay_reason",
+    "extracted_ref": "INV-2026-BLOCKED",
+    "extracted_amount": 220.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "payments",
+    "to_email": "payments@company.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}

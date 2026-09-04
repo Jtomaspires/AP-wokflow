@@ -1,0 +1,24 @@
+{
+  "id": "012",
+  "name": "low_confidence_intent",
+  "input": {
+    "thread_id": "thread-eval-012",
+    "message_id": "msg-eval-012",
+    "from": "billing@acme-supplies.com",
+    "subject": "Maybe an invoice?",
+    "body": "Not sure what this is.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "intent_confidence": 0.2,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "not_found",
+    "draft_target": "invoicing",
+    "to_email": "invoicing@company.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request."
+  }
+}
