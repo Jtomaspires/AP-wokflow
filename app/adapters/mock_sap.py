@@ -17,10 +17,16 @@ def _load_from(path: Path) -> list[Invoice]:
 
 
 class MockSAPAdapter(SAPPort):
-    def __init__(self, fixtures_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        fixtures_dir: Path | None = None,
+        *,
+        approval: list[Invoice] | None = None,
+        posted: list[Invoice] | None = None,
+    ) -> None:
         root = fixtures_dir or _FIXTURES
-        self._approval = _load_from(root / "approval.json")
-        self._posted = _load_from(root / "posted.json")
+        self._approval = list(approval) if approval is not None else _load_from(root / "approval.json")
+        self._posted = list(posted) if posted is not None else _load_from(root / "posted.json")
 
     def get_approval_invoices(self) -> list[Invoice]:
         return list(self._approval)

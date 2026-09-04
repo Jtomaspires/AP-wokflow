@@ -1,4 +1,10 @@
-"""Compile ingest → … → routing → resolution stub (Day 4)."""
+"""Compile inbound spine: … → resolution → draft → hitl → END.
+
+HITL option 2 (assistant pattern): the inbound graph ends at hitl with
+AWAITING_HUMAN. Celery runs this graph only. Approve does not resume a
+checkpointer; HitlService.approve runs make_send_node(deps). Escalate
+marks ESCALATED and never sends.
+"""
 
 import inspect
 from uuid import UUID
@@ -8,6 +14,8 @@ from langgraph.graph import END, START, StateGraph
 from app.domain.deps import WorkflowDeps
 from app.domain.enums import AuditAction
 from app.domain.models import AuditEntry
+from app.graph.nodes.draft import make_draft_node
+from app.graph.nodes.hitl import make_hitl_node
 from app.graph.nodes.ingest import make_ingest_node
 from app.graph.nodes.intent import make_intent_node
 from app.graph.nodes.resolution import make_resolution_node
@@ -83,6 +91,8 @@ def build_graph(deps: WorkflowDeps):
     graph.add_node("sender", _with_audit("sender", make_sender_node(deps), deps))
     graph.add_node("routing", _with_audit("routing", make_routing_node(deps), deps))
     graph.add_node("resolution", _with_audit("resolution", make_resolution_node(deps), deps))
+    graph.add_node("draft", _with_audit("draft", make_draft_node(deps), deps))
+    graph.add_node("hitl", _with_audit("hitl", make_hitl_node(deps), deps))
 
     graph.add_edge(START, "ingest")
     graph.add_conditional_edges("ingest", _stop_or("security"))
@@ -92,6 +102,8 @@ def build_graph(deps: WorkflowDeps):
     graph.add_conditional_edges("intent", _after_intent)
     graph.add_edge("sender", "routing")
     graph.add_conditional_edges("routing", _after_routing)
-    graph.add_edge("resolution", END)
+    graph.add_edge("resolution", "draft")
+    graph.add_edge("draft", "hitl")
+    graph.add_edge("hitl", END)
 
     return graph.compile()

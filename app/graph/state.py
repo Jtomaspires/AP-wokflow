@@ -1,4 +1,4 @@
-"""LangGraph state (ingest → routing; resolution is a Day-5 stub).
+"""LangGraph state (inbound spine through HITL).
 
 Do not put WorkflowDeps here — it does not serialize. Close deps in node factories.
 """
@@ -20,6 +20,18 @@ class LabState(TypedDict, total=False):
     sender_id: str | None
     spf_pass: bool | None
     dkim_pass: bool | None
+    match_result: str | None
+    match_method: str | None
+    invoice_ref: str | None
+    invoice_dump: dict[str, Any] | None
+    requires_hitl: bool
+    is_overdue: bool
+    is_near_due: bool
+    vat_notes: str | None
+    skip_draft: bool
+    draft_id: str | None
+    review_action: str | None
+    operator_id: str | None
     audit_action: str | None
     audit_metadata: dict[str, Any]
     audit_confidence: float | None

@@ -19,6 +19,9 @@ _DEFAULT_INTENT = {
     "extracted_ref": "INV-2026-0001",
     "extracted_amount": 1250.0,
 }
+_DEFAULT_DRAFT = {
+    "generated_text": "Thank you. We are reviewing invoice INV-2026-0001.",
+}
 
 
 def build_workflow_deps(
@@ -28,7 +31,8 @@ def build_workflow_deps(
 ) -> WorkflowDeps:
     return WorkflowDeps(
         settings=settings,
-        llm=llm or MockLLMAdapter(responses=[_DEFAULT_TRIAGE, _DEFAULT_INTENT]),
+        llm=llm
+        or MockLLMAdapter(responses=[_DEFAULT_TRIAGE, _DEFAULT_INTENT, _DEFAULT_DRAFT]),
         email=MockEmailAdapter(),
         tickets=TicketRepo(session),
         sap=MockSAPAdapter(),

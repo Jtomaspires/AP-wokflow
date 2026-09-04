@@ -1,4 +1,4 @@
-"""Routing: MINE → resolution stub, or DELEGATE and stop."""
+"""Routing: MINE → resolution, or DELEGATE and stop."""
 
 from datetime import UTC, datetime
 

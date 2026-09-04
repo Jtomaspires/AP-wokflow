@@ -32,7 +32,7 @@ def run_process_email(
     *,
     llm: LLMPort | None = None,
 ) -> dict:
-    """Run ingest → security → triage in-process (no broker)."""
+    """Run the inbound graph in-process (no broker). Does not send."""
     with Session(engine) as session:
         deps = build_workflow_deps(session, llm=llm)
         final = asyncio.run(
