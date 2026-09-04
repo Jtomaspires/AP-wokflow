@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     VAT_RATE: float = 0.23
     MATCH_VALUE_TOLERANCE_PCT: float = 0.02
     MATCH_VALUE_TOLERANCE_ABS: float = 1.00
+    RESOLUTION_RETRY_ENABLED: bool = False
+    WORKFLOW_SUCCESS_THRESHOLD: float = 0.80
+    EVAL_LIVE_LLM: bool = False
 
     # Routing
     DEFAULT_OPERATOR_ID: str = "op_joao"
@@ -42,7 +45,7 @@ class Settings(BaseSettings):
     SPF_DKIM_ENABLED: bool = False
     SECURITY_CHECK_ENABLED: bool = True
     SENDER_DOMAIN_WHITELIST: str = (
-        "acme-supplies.com,group-subsidiary.com,p2p-branch.com,company.com"
+        "acme-supplies.com,group-subsidiary.com,p2p-branch.com,company.com,vendor.com"
     )
     TRIAGE_DISCARD_MIN_CONFIDENCE: float = 0.8
     INTENT_MIN_CONFIDENCE: float = 0.5
