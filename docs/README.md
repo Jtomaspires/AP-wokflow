@@ -48,7 +48,7 @@ Day 7 may **retry inside resolution** before HITL; that loop is not part of Days
 | 4 | [PLAN_DAY4.md](PLAN_DAY4.md) | Thread, intent, sender, routing, SPF/DKIM, audit | Done |
 | 5 | [PLAN_DAY5.md](PLAN_DAY5.md) | Resolution (parity), draft, HITL, send, HITL API | Done |
 | 6 | [PLAN_DAY6.md](PLAN_DAY6.md) | Eval / shadow via `ainvoke` | Done |
-| 7 | [PLAN_DAY7.md](PLAN_DAY7.md) | Resolution retry loop + visual README | Planned (post-parity) |
+| 7 | [PLAN_DAY7.md](PLAN_DAY7.md) | Resolution retry loop + visual README | Done (post-parity) |
 
 Alembic + pgAdmin (lab DB on port **5434**): [ALEMBIC_PGADMIN.md](ALEMBIC_PGADMIN.md).
 
