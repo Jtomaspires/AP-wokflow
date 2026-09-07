@@ -1,4 +1,4 @@
-"""Invoice reference matching (exact → fuzzy → amount+supplier). No retry loop."""
+"""Invoice reference matching (exact → fuzzy → amount+supplier)."""
 
 from __future__ import annotations
 
@@ -47,6 +47,7 @@ class MatchOutcome:
     invoice: Invoice | None
     requires_hitl: bool
     vat_notes: str | None = None
+    confidence: float = 0.0
 
 
 def match_invoices(
@@ -57,32 +58,35 @@ def match_invoices(
     extracted_amount: float | None,
     supplier_hint: str | None,
     settings: Settings,
+    fuzzy_cutoff: float | None = None,
 ) -> MatchOutcome:
     pool = list(approval) + list(posted)
     needle = normalize_reference(extracted_ref)
+    cutoff = settings.MATCH_FUZZY_CUTOFF if fuzzy_cutoff is None else fuzzy_cutoff
 
     exact_app = [i for i in approval if needle and normalize_reference(i.invoice_ref) == needle]
     exact_post = [i for i in posted if needle and normalize_reference(i.invoice_ref) == needle]
     exact = exact_app + exact_post
     if len(exact_app) >= 1 and len(exact_post) >= 1:
-        return MatchOutcome(InvoiceMatchResult.MULTIPLE, "exact", None, True)
+        return MatchOutcome(InvoiceMatchResult.MULTIPLE, "exact", None, True, confidence=0.3)
     if len(exact) > 1:
-        return MatchOutcome(InvoiceMatchResult.TOO_MANY, "exact", None, True)
+        return MatchOutcome(InvoiceMatchResult.TOO_MANY, "exact", None, True, confidence=0.2)
     if len(exact) == 1:
-        return MatchOutcome(InvoiceMatchResult.MATCH, "exact", exact[0], False)
+        return MatchOutcome(InvoiceMatchResult.MATCH, "exact", exact[0], False, confidence=1.0)
 
     if needle:
-        fuzzy_hits = [
-            inv
+        scored = [
+            (inv, _fuzzy(normalize_reference(inv.invoice_ref), needle))
             for inv in pool
-            if _fuzzy(normalize_reference(inv.invoice_ref), needle) >= 0.85
         ]
+        fuzzy_hits = [(inv, score) for inv, score in scored if score >= cutoff]
         if len(fuzzy_hits) > 3:
-            return MatchOutcome(InvoiceMatchResult.TOO_MANY, "fuzzy", None, True)
+            return MatchOutcome(InvoiceMatchResult.TOO_MANY, "fuzzy", None, True, confidence=0.2)
         if len(fuzzy_hits) > 1:
-            return MatchOutcome(InvoiceMatchResult.MULTIPLE, "fuzzy", None, True)
+            return MatchOutcome(InvoiceMatchResult.MULTIPLE, "fuzzy", None, True, confidence=0.3)
         if len(fuzzy_hits) == 1:
-            return MatchOutcome(InvoiceMatchResult.MATCH, "fuzzy", fuzzy_hits[0], False)
+            inv, score = fuzzy_hits[0]
+            return MatchOutcome(InvoiceMatchResult.MATCH, "fuzzy", inv, False, confidence=score)
 
     amount = Decimal(str(extracted_amount)) if extracted_amount is not None else None
     if amount is not None and supplier_hint:
@@ -93,11 +97,11 @@ def match_invoices(
             and _supplier_close(inv.supplier_name, supplier_hint)
         ]
         if len(amount_hits) > 1:
-            return MatchOutcome(InvoiceMatchResult.MULTIPLE, "amount", None, True)
+            return MatchOutcome(InvoiceMatchResult.MULTIPLE, "amount", None, True, confidence=0.3)
         if len(amount_hits) == 1:
-            return MatchOutcome(InvoiceMatchResult.MATCH, "amount", amount_hits[0], False)
+            return MatchOutcome(InvoiceMatchResult.MATCH, "amount", amount_hits[0], False, confidence=0.8)
 
-    return MatchOutcome(InvoiceMatchResult.NOT_FOUND, None, None, False)
+    return MatchOutcome(InvoiceMatchResult.NOT_FOUND, None, None, False, confidence=0.0)
 
 
 def due_flags(invoice: Invoice | None, settings: Settings, today: date | None = None) -> tuple[bool, bool]:
@@ -124,3 +128,39 @@ def looks_like_vat_gross(
     close_gross = _amounts_close(extracted, gross, settings)
     close_net = _amounts_close(extracted, net, settings)
     return close_gross and not close_net
+
+
+_AMBIGUOUS = {
+    InvoiceMatchResult.NOT_FOUND,
+    InvoiceMatchResult.MULTIPLE,
+    InvoiceMatchResult.TOO_MANY,
+}
+
+
+def should_retry_match(outcome: MatchOutcome, settings: Settings, retry_n: int) -> bool:
+    if not settings.RESOLUTION_RETRY_ENABLED:
+        return False
+    if retry_n >= settings.RESOLUTION_RETRY_MAX:
+        return False
+    if outcome.result is InvoiceMatchResult.MATCH and outcome.method == "exact":
+        return False
+    if (
+        outcome.result is InvoiceMatchResult.MATCH
+        and outcome.confidence >= settings.RESOLUTION_RETRY_MIN_CONFIDENCE
+    ):
+        return False
+    return (
+        outcome.result in _AMBIGUOUS
+        or outcome.confidence < settings.RESOLUTION_RETRY_MIN_CONFIDENCE
+    )
+
+
+def widened_match_settings(settings: Settings) -> Settings:
+    factor = settings.RESOLUTION_RETRY_TOLERANCE_MULTIPLIER
+    return settings.model_copy(
+        update={
+            "MATCH_VALUE_TOLERANCE_ABS": settings.MATCH_VALUE_TOLERANCE_ABS * factor,
+            "MATCH_VALUE_TOLERANCE_PCT": settings.MATCH_VALUE_TOLERANCE_PCT * factor,
+            "MATCH_FUZZY_CUTOFF": settings.RESOLUTION_RETRY_FUZZY_FLOOR,
+        }
+    )
