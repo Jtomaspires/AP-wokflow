@@ -16,3 +16,6 @@ venv/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Local notes (not committed)
+docs/DATA_FLOW.md

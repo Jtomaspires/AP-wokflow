@@ -2,6 +2,22 @@
 
 **LangGraph AP email assistant — HTTP operators, no Streamlit.**
 
+## The problem this solves
+mas 
+Before this, answering a supplier's invoice query meant VPN in, wait for the SAP session, hope it didn't time out, search one vendor account at a time, find the document, write the reply. On average that was about 1h 15m of actual work per day. Now it's closer to 20 minutes (rough estimate) — the system reads the email, finds the invoice, and has a draft ready. I just review and send.
+
+The questions repeat, but the answers depend on state that lives in different places for different vendors:
+
+- "Has this been paid?": sometimes yes with a clearing document attached, sometimes SAP says paid but clearing hasn't posted yet — those two cases need different answers, not the same one
+- "Why is this stuck?": could be sitting in approval past its due date, or blocked at the posted stage waiting on payments
+- "When will this go out?": future timing, usually needs the approval owner, not the supplier, to answer
+
+Edge cases still take real time -> VAT mismatches, invoices that show up in two different SAP tables, duplications, references that don't match cleanly because of OCR noise on scanned attachments. There's room to automate more of those, but for now they go to a human.
+
+The real pain was the fragmentation. Every vendor lived in its own silo. This centralizes everything: inbound email, invoice lookup, draft, approval, audit trail — one place.
+ç
+Nothing goes out automatically. A person still approves every reply.
+
 Inbound supplier mail is classified, matched against mock SAP, drafted, and parked for a human. Send runs only after `POST /tickets/{id}/approve`.
 
 > Park at HITL. Never auto-send.
@@ -16,11 +32,9 @@ Inbound supplier mail is classified, matched against mock SAP, drafted, and park
 
 ## What it is
 
-This repo rebuilds a procure-to-pay AP assistant with **native LangGraph** instead of Launchpad `TicketWorkflow`. The graph, domain, and ports do not import Postgres, Redis, or an LLM vendor — adapters swap (memory in tests, Postgres in the worker).
+A procure-to-pay AP assistant built with **native LangGraph**. The graph, domain, and ports do not import Postgres, Redis, or an LLM vendor — adapters swap (memory in tests, Postgres in the worker).
 
-Operators use **curl** or the React operator console in `frontend/`. There is no Streamlit UI.
-
-Day plans: [docs/README.md](docs/README.md). Call diagrams: [docs/diagrams/LAB_CALL_DIAGRAMS.md](docs/diagrams/LAB_CALL_DIAGRAMS.md).
+Operators use **curl** or the React operator console in `frontend/`. Operator UI: [frontend/README.md](frontend/README.md).
 
 ---
 
@@ -58,29 +72,59 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 
 ---
 
-## Technical highlights
+## 🧠 Technical highlights
 
-- **Hexagon** — 7 ports: Email, Tickets, LLM, SAP, Audit, Senders, Drafts. `WorkflowDeps` is closed in node factories, **never** in graph state.
-- **LangGraph** — `StateGraph` + conditional edges; inbound ends at HITL (assistant option 2: approve calls `make_send_node`).
-- **Deterministic + LLM** — match and draft target are rules; triage, intent, VAT notes, and draft text are structured LLM calls.
-- **Eval** — 20 golden emails, `FixtureGuidedLLM`, `ainvoke`; exit 1 if success &lt; 0.80.
+### Key technical decisions
 
-### Stack
+- **Deterministic + LLM hybrid** — invoice matching and draft target selection are pure rules; triage, intent classification, VAT reasoning, and draft text are structured LLM calls. The system knows what it can decide without a model.
+- **Hexagonal architecture** — 7 ports (Email, Tickets, LLM, SAP, Audit, Senders, Drafts) with adapters that swap cleanly. `WorkflowDeps` is closed in node factories, never put in graph state.
+- **Graph-native orchestration** — LangGraph `StateGraph` with conditional edges; inbound ends at HITL. Approve runs `make_send_node` outside the inbound spine (option 2 — no checkpointer needed).
+- **Eval harness** — 20 golden fixture emails, `FixtureGuidedLLM`, full `ainvoke`; exits 1 if success rate < 0.80.
+
+### Architecture highlights
+
+- **Inbound spine**: FastAPI → Celery → LangGraph nodes → `AWAITING_HUMAN`
+- **Approval path**: HTTP `POST /approve` → `HitlService` → send node (mock)
+- **Storage**: Postgres for tickets, audit, drafts; JSON fixtures for SAP and sender directory
+- **Isolation**: in-memory adapters in tests and eval — no Docker needed to run the graph
+
+## ⚙️ Stack
+
+### API & worker
 
 | Layer | Tech |
 |---|---|
 | Graph | LangGraph |
 | API | FastAPI (`/webhook/mock`, `/tickets`, approve/escalate) |
-| Queue | Celery + Redis (Windows worker: `--pool=solo`) |
-| Store | Postgres (Alembic); in-memory stores in tests and eval |
-| SAP / senders | JSON fixtures + mock adapters |
-| LLM | `MockLLMAdapter` / fixture-guided eval (optional live key later) |
+| Queue | Celery + Redis (Windows: `--pool=solo`) |
+| Store | Postgres via Alembic migrations |
 
-**Out of scope:** Streamlit, OCR, live Nylas, live SAP, auto-send.
+### Adapters (current)
+
+| Port | Implementation |
+|---|---|
+| Email | `MockEmailAdapter` — parses raw webhook dict |
+| SAP | `MockSAPAdapter` — reads `fixtures/sap_mock/*.json` |
+| Senders | `MockSenderDirectory` — reads `fixtures/senders/*.json` |
+| LLM | `MockLLMAdapter` / `FixtureGuidedLLM` for eval |
+| Tickets / Audit / Drafts | Postgres repos (swap to in-memory in tests) |
+
+### Operator UI
+
+| Layer | Tech |
+|---|---|
+| Framework | Vite + React + TypeScript |
+| Styling | Tailwind CSS |
+| State | REST polling (no websockets) |
+| Port | 5173 (API on 8000) |
+
+**Not yet implemented:** live SAP connector, real email send (Nylas), OCR on attachments, multi-tenant auth.
 
 ---
 
 ## Workflow
+
+If SAP says paid and there's no clearing document, we still don't tell the supplier it's paid. That ticket waits for a human.
 
 ```mermaid
 flowchart TD
@@ -106,7 +150,9 @@ flowchart TD
   send --> E6[END]
 ```
 
-Day 7 retry stays **inside** `resolution` (not extra graph nodes).
+Retry logic stays inside `resolution` — no extra graph nodes.
+
+There's still a lot to do. Live SAP, real email sending, OCR for attachments, multi-operator routing at scale — this is a working proof of concept, not a finished product.
 
 ---
 
@@ -167,3 +213,13 @@ python scripts/run_eval.py
 ```
 
 Writes `golden_dataset/baselines/v1.json`.
+
+---
+
+## Why LangGraph, and what I took from it
+
+This is the second version of this system. The first was built on the [Launchpad](https://launchpad.datalumina.com/docs/welcome/introduction) workflow engine (linear nodes, manual routing). It worked, but I wanted to understand what a graph-native orchestration framework actually buys you versus rolling your own, and also, I never had made a hands-on project with langraph
+
+The honest answer: less than I expected for a linear pipeline like this one. LangGraph's real advantage shows up with cycles and conditional branching that loop back and the retry logic in `resolution` is the one place here that actually benefits from that. For the rest, it's mostly a different way of writing the same routing decisions.
+
+What building this twice reinforced, more than the framework choice, is that agent orchestration is downstream of good data modelling. The routing logic only works because the domain models (Ticket, Invoice, Sender, AuditEntry) and the ports around them were designed first, the graph is just the thing that walks through decisions that data structure already made possible. Get the data model wrong and no orchestration framework fixes that.
