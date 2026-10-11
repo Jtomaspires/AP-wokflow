@@ -9,7 +9,7 @@ from app.domain.enums import AuditAction, DraftTarget, InvoiceMatchResult, Invoi
 from app.domain.models import Invoice, ResponseDraft
 from app.graph.nodes._ticket import load_ticket, missing_ticket
 from app.graph.state import LabState
-from app.llm.prompts import DRAFT_SYSTEM_PROMPT
+from app.llm.prompts import DRAFT_SYSTEM_PROMPT, build_draft_user_prompt
 
 
 class DraftOutput(BaseModel):
@@ -93,9 +93,17 @@ def make_draft_node(deps: WorkflowDeps):
                 "audit_metadata": {"skipped": True, "match_result": match_result.value},
             }
 
+        to_email = _to_email(deps, target, ticket, invoice)
         output = await deps.llm.generate(
             system_prompt=DRAFT_SYSTEM_PROMPT,
-            user_prompt=f"Subject: {ticket.subject}\n\n{ticket.body}",
+            user_prompt=build_draft_user_prompt(
+                ticket=ticket,
+                invoice=invoice,
+                target=target,
+                to_email=to_email,
+                match_result=match_result,
+                intent=ticket.intent,
+            ),
             output_schema=DraftOutput,
         )
         if not isinstance(output, DraftOutput):
@@ -110,7 +118,7 @@ def make_draft_node(deps: WorkflowDeps):
             ResponseDraft(
                 ticket_id=ticket.id,
                 target=target,
-                to_email=_to_email(deps, target, ticket, invoice),
+                to_email=to_email,
                 generated_text=output.generated_text,
                 attach_payment_proof=attach_proof,
             )
