@@ -95,7 +95,7 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 | Layer | Tech |
 |---|---|
 | Graph | LangGraph |
-| API | FastAPI (`/webhook/mock`, `/tickets`, approve/escalate) |
+| API | FastAPI (`/webhook/mock`, `/tickets`, approve/escalate, `/auth` cookie sessions with Argon2 passwords) |
 | Queue | Celery + Redis (Windows: `--pool=solo`) |
 | Store | Postgres via Alembic migrations |
 
@@ -164,9 +164,10 @@ Postgres **5434**, Redis **6380**. From this directory:
 docker compose up -d
 copy .env.dev .env
 alembic upgrade head
+python scripts/seed_operator.py --id op_joao --email joao@company.com --name "João"
 ```
 
-Fix `DATABASE_URL` in `.env` to `lab:lab_dev` if compose uses those credentials.
+Fix `DATABASE_URL` in `.env` to `lab:lab_dev` if compose uses those credentials. The seed script prompts for the operator password.
 
 **1 — API**
 
@@ -188,11 +189,16 @@ curl -s -X POST http://127.0.0.1:8000/webhook/mock -H "Content-Type: application
 
 If Redis is down, the same POST runs the graph in-process and returns `{ "ticket_id", "status" }`.
 
+Ticket and HITL routes need an operator session (an `HttpOnly` cookie). Log in once and reuse the cookie jar. Use `localhost` throughout, because the cookie is tied to the host name:
+
 ```powershell
-curl -s http://127.0.0.1:8000/health
-curl -s http://127.0.0.1:8000/tickets/<ticket-uuid>
-curl -s -X POST http://127.0.0.1:8000/tickets/<ticket-uuid>/approve -H "Content-Type: application/json" -d "{\"operator_id\":\"op_joao\"}"
+curl -s http://localhost:8000/health
+curl -s -c cookies.txt -X POST http://localhost:8000/auth/login -H "Content-Type: application/json" -d "{\"email\":\"joao@company.com\",\"password\":\"<your password>\"}"
+curl -s -b cookies.txt http://localhost:8000/tickets/<ticket-uuid>
+curl -s -b cookies.txt -X POST http://localhost:8000/tickets/<ticket-uuid>/approve -H "Content-Type: application/json" -d "{}"
 ```
+
+The approver recorded on the review is the logged-in operator, not a field in the request.
 
 Unknown domain (`evil.example`) → `quarantined`. High-confidence non-AP → `discarded`. Other operator → `delegated`.
 
