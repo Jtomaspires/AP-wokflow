@@ -109,3 +109,11 @@ class HumanReview(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     notes: str | None = None
     created_at: datetime = Field(default_factory=_utc_now)
+
+
+class Operator(BaseModel):
+    id: str
+    email: str
+    display_name: str
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=_utc_now)

@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, Date, ForeignKey, Numeric, Text
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Numeric, Text
 from sqlalchemy.types import JSON
 from sqlmodel import Field, SQLModel
 
@@ -114,3 +114,36 @@ class HumanReviewTable(SQLModel, table=True):
     operator_id: str
     notes: str | None = None
     created_at: datetime = Field(default_factory=_utc_now)
+
+
+class OperatorTable(SQLModel, table=True):
+    __tablename__ = "operators"
+
+    id: str = Field(primary_key=True)
+    email: str = Field(index=True, unique=True)
+    display_name: str
+    password_hash: str
+    is_active: bool = True
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+
+
+class OperatorSessionTable(SQLModel, table=True):
+    __tablename__ = "operator_sessions"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    token_hash: str = Field(index=True, unique=True)
+    operator_id: str = Field(
+        sa_column=Column(
+            ForeignKey("operators.id", ondelete="CASCADE"), nullable=False, index=True
+        )
+    )
+    created_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    expires_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+    revoked_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )

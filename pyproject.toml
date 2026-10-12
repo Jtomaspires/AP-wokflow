@@ -12,6 +12,7 @@ dependencies = [
   "pydantic-settings",
   "langgraph",
   "openai>=1.99",
+  "argon2-cffi",
 ]
 
 [project.optional-dependencies]

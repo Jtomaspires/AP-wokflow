@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     # Routing
     DEFAULT_OPERATOR_ID: str = "op_joao"
 
+    # Auth
+    SESSION_COOKIE_NAME: str = "p2p_session"
+    SESSION_TTL_HOURS: int = 12
+    COOKIE_SECURE: bool = False
+    CORS_ORIGINS: str = "http://localhost:5173"
+
     # Mailboxes
     INVOICING_EMAIL: str = "invoicing@company.com"
     PAYMENTS_EMAIL: str = "payments@company.com"
