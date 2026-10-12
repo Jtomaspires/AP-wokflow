@@ -10,9 +10,19 @@ from sqlmodel import Session
 
 from app.adapters.postgres_tickets import TicketRepo
 from app.api.main import app
+from app.auth.dependencies import get_current_operator
 from app.domain.enums import TicketStatus
-from app.domain.models import Ticket
+from app.domain.models import Operator, Ticket
 from app.worker.tasks import engine
+
+
+@pytest.fixture(autouse=True)
+def logged_in_operator():
+    app.dependency_overrides[get_current_operator] = lambda: Operator(
+        id="op_joao", email="joao@test", display_name="Test"
+    )
+    yield
+    app.dependency_overrides.pop(get_current_operator, None)
 
 
 @pytest.fixture
@@ -91,7 +101,8 @@ def test_ingest_falls_back_sync_when_redis_down():
 
     assert body["status"] == "quarantined"
     assert body["ticket_id"] is not None
-    ticket = get_ticket(UUID(body["ticket_id"]))
+    operator = Operator(id="op_joao", email="joao@test", display_name="Test")
+    ticket = get_ticket(UUID(body["ticket_id"]), operator)
     assert ticket["status"] == "quarantined"
 
 
@@ -161,15 +172,12 @@ async def test_approve_and_escalate_http(client):
     assert stats.status_code == 200
     assert isinstance(stats.json(), dict)
 
-    bad = await client.post(
-        f"/tickets/{open_ticket.id}/approve",
-        json={"operator_id": "op_joao"},
-    )
+    bad = await client.post(f"/tickets/{open_ticket.id}/approve", json={})
     assert bad.status_code == 409
 
     ok = await client.post(
         f"/tickets/{waiting.id}/approve",
-        json={"operator_id": "op_joao", "final_text": "Edited send"},
+        json={"final_text": "Edited send"},
     )
     assert ok.status_code == 200
     assert ok.json()["status"] == "resolved"
@@ -191,9 +199,6 @@ async def test_approve_and_escalate_http(client):
     with Session(engine) as session:
         esc_ticket = TicketRepo(session).save_ticket(esc_ticket)
 
-    esc = await client.post(
-        f"/tickets/{esc_ticket.id}/escalate",
-        json={"operator_id": "op_joao"},
-    )
+    esc = await client.post(f"/tickets/{esc_ticket.id}/escalate")
     assert esc.status_code == 200
     assert esc.json()["status"] == "escalated"
