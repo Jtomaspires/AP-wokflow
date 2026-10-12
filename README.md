@@ -3,7 +3,7 @@
 **LangGraph AP email assistant — HTTP operators, no Streamlit.**
 
 ## The problem this solves
-mas 
+
 Before this, answering a supplier's invoice query meant VPN in, wait for the SAP session, hope it didn't time out, search one vendor account at a time, find the document, write the reply. On average that was about 1h 15m of actual work per day. Now it's closer to 20 minutes (rough estimate) — the system reads the email, finds the invoice, and has a draft ready. I just review and send.
 
 The questions repeat, but the answers depend on state that lives in different places for different vendors:
@@ -15,7 +15,7 @@ The questions repeat, but the answers depend on state that lives in different pl
 Edge cases still take real time -> VAT mismatches, invoices that show up in two different SAP tables, duplications, references that don't match cleanly because of OCR noise on scanned attachments. There's room to automate more of those, but for now they go to a human.
 
 The real pain was the fragmentation. Every vendor lived in its own silo. This centralizes everything: inbound email, invoice lookup, draft, approval, audit trail — one place.
-ç
+
 Nothing goes out automatically. A person still approves every reply.
 
 Inbound supplier mail is classified, matched against mock SAP, drafted, and parked for a human. Send runs only after `POST /tickets/{id}/approve`.
@@ -34,7 +34,7 @@ Inbound supplier mail is classified, matched against mock SAP, drafted, and park
 
 A procure-to-pay AP assistant built with **native LangGraph**. The graph, domain, and ports do not import Postgres, Redis, or an LLM vendor — adapters swap (memory in tests, Postgres in the worker).
 
-Operators use **curl** or the React operator console in `frontend/`. Operator UI: [frontend/README.md](frontend/README.md).
+Operators sign in to the React console in `frontend/`, or call the API with the session cookie. Operator UI: [frontend/README.md](frontend/README.md).
 
 ---
 
@@ -52,8 +52,8 @@ Webhook → inbound graph → `AWAITING_HUMAN` → approve → mock send.
 |---|---|
 | `POST /webhook/mock` | Celery runs the **inbound** graph only |
 | HITL | Ticket status `awaiting_human`; draft stored if the decision table allows |
-| `POST /tickets/{id}/approve` | `HitlService` runs the send node (not on the inbound spine) |
-| Escalate | `escalated`, no send |
+| `POST /tickets/{id}/approve` | Session operator; `HitlService` runs the send node (not on the inbound spine) |
+| Escalate | Same session; status `escalated`, no send |
 
 Resolution can retry **once** with wider match tolerances when `RESOLUTION_RETRY_ENABLED=true`. Default is **off** so golden eval stays comparable to the original assistant.
 
@@ -65,8 +65,9 @@ Resolution can retry **once** with wider match tolerances when `RESOLUTION_RETRY
 - **Triage / intent** — AP vs discard; payment status, delay reason, future timing (LLM behind `LLMPort`)
 - **Routing** — MINE vs DELEGATE from sender directory rules
 - **Resolution** — exact ref → fuzzy ≥ 0.85 → amount ± tolerance + supplier; VAT notes; PAID without clearing → HITL
-- **Draft** — deterministic target (sender / invoicing / payments / approval owners); LLM writes `generated_text` only
-- **HITL API** — list/get tickets, draft, approve, escalate, stats; 409 if not awaiting human
+- **Draft** — deterministic target (sender / invoicing / payments / approval owners). The prompt carries the matched invoice (amount, stage, due date, clearing, payment date, blocking reason). The model writes `generated_text` only, and may say the invoice is paid only when a clearing document exists.
+- **HITL API** — list/get tickets, draft, approve, escalate, stats. These routes need a session. Approve and escalate record that operator. 409 if the ticket is not awaiting a human. Ticket detail audit rows include `confidence` and `created_at`.
+- **Auth** — operators live in Postgres (`operators`, `operator_sessions`). Passwords are Argon2. The cookie is `HttpOnly` and holds a random token; Postgres stores only its SHA-256. Auth is not a workflow port: the graph never sees who is logged in. `/health`, `/ingest`, and `/webhook/mock` stay public.
 
 Early exits: missing ids, duplicate, quarantine, discard, delegate.
 
@@ -85,7 +86,7 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 
 - **Inbound spine**: FastAPI → Celery → LangGraph nodes → `AWAITING_HUMAN`
 - **Approval path**: HTTP `POST /approve` → `HitlService` → send node (mock)
-- **Storage**: Postgres for tickets, audit, drafts; JSON fixtures for SAP and sender directory
+- **Storage**: Postgres for tickets, audit, drafts, operators, and sessions; JSON fixtures for SAP and the sender directory
 - **Isolation**: in-memory adapters in tests and eval — no Docker needed to run the graph
 
 ## ⚙️ Stack
@@ -106,17 +107,18 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 | Email | `MockEmailAdapter` — parses raw webhook dict |
 | SAP | `MockSAPAdapter` — reads `fixtures/sap_mock/*.json` |
 | Senders | `MockSenderDirectory` — reads `fixtures/senders/*.json` |
-| LLM | `MockLLMAdapter` / `FixtureGuidedLLM` for eval |
+| LLM | `OpenAILLMAdapter` (structured outputs, one retry, optional fallback) when `LLM_PRIMARY_API_KEY` is set; otherwise `MockLLMAdapter`, which always returns AP + `INV-2026-0001`. Eval uses `FixtureGuidedLLM`. |
 | Tickets / Audit / Drafts | Postgres repos (swap to in-memory in tests) |
 
 ### Operator UI
 
 | Layer | Tech |
 |---|---|
-| Framework | Vite + React + TypeScript |
-| Styling | Tailwind CSS |
+| Framework | Vite 6 + React + TypeScript |
+| UI | shadcn/ui (Radix, Tailwind 4): status tiles, ticket feed, tabbed detail, review dialog, toasts |
+| Auth | `/login`, cookie session, route guard. The header shows the signed-in operator. |
 | State | REST polling (no websockets) |
-| Port | 5173 (API on 8000) |
+| Port | 5173 (API on 8000). Use `localhost` on both, or the cookie is not sent. |
 
 **Not yet implemented:** live SAP connector, real email send (Nylas), OCR on attachments, multi-tenant auth.
 
@@ -181,7 +183,7 @@ uvicorn app.api.main:app --reload --port 8000
 celery -A app.worker.tasks:celery_app worker --pool=solo --loglevel=info
 ```
 
-**3 — Ingest** (whitelisted `acme-supplies.com`; mock LLM defaults to AP + `INV-2026-0001`):
+**3 — Ingest** (whitelisted `acme-supplies.com`). Without `LLM_PRIMARY_API_KEY`, triage and intent stay fixed on AP + `INV-2026-0001`. With a key, the email text drives those calls. Restart the worker after changing the key.
 
 ```powershell
 curl -s -X POST http://127.0.0.1:8000/webhook/mock -H "Content-Type: application/json" -d "{\"thread_id\":\"t1\",\"message_id\":\"msg-demo-1\",\"from\":\"billing@acme-supplies.com\",\"subject\":\"Invoice INV-2026-0001\",\"body\":\"Please confirm payment status\"}"
@@ -210,7 +212,7 @@ npm install
 npm run dev
 ```
 
-Open the Vite URL (usually `http://localhost:5173`). Copy `frontend/.env.example` to `frontend/.env` if `VITE_API_URL` is not already `http://localhost:8000`. This app is pinned to Vite 6 so it runs on Node 20.18.
+Open `http://localhost:5173` and sign in with the seeded operator. Copy `frontend/.env.example` to `frontend/.env` if `VITE_API_URL` is not already `http://localhost:8000`. This app is pinned to Vite 6 so it runs on Node 20.18. oxlint is pinned to 1.16 for that same Node version.
 
 **Eval** (in-memory, fixture-guided LLM, retry off):
 
