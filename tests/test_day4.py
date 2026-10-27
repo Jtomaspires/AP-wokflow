@@ -92,6 +92,32 @@ async def test_low_confidence_intent_skips_identity():
 
 
 @pytest.mark.asyncio
+async def test_low_extraction_confidence_resolution_ignores_ref():
+    store = InMemoryTicketStore()
+    llm = MockLLMAdapter()
+    llm.enqueue({"is_ap": True, "confidence": 0.95})
+    llm.enqueue(
+        {
+            "intent": "payment_status",
+            "confidence": 0.9,
+            "language": "en",
+            "extracted_ref": "INV-2026-0001",
+            "extracted_amount": 1250.0,
+            "extraction_confidence": 0.3,
+        }
+    )
+    llm.enqueue({"generated_text": "We could not find that invoice."})
+    deps = make_test_deps(tickets=store, llm=llm)
+    final = await build_graph(deps).ainvoke(
+        {"raw_payload": _intent_payload("msg-extract-low")}
+    )
+    assert final["skip_identity"] is False
+    assert final["extraction_confidence"] == pytest.approx(0.3)
+    assert final["match_result"] == "not_found"
+    assert final["invoice_ref"] is None
+
+
+@pytest.mark.asyncio
 async def test_discard_never_calls_intent_llm():
     store = InMemoryTicketStore()
     llm = MockLLMAdapter()

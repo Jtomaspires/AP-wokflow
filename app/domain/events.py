@@ -10,6 +10,7 @@ class IncomingEmail(BaseModel):
 
     thread_id: str | None = None
     message_id: str | None = None
+    provider_message_id: str | None = None
     from_email: str
     subject: str = ""
     body: str = ""

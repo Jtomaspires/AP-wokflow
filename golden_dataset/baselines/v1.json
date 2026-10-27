@@ -1,15 +1,15 @@
 {
-  "success": 1.0,
+  "success": 0.9666666666666667,
   "threshold": 0.8,
-  "count": 20,
+  "count": 30,
   "per_dimension": {
     "intent": 1.0,
-    "ticket_status": 1.0,
+    "ticket_status": 0.9666666666666667,
     "invoice_resolution": 1.0,
     "draft_target": 1.0,
     "to_email": 1.0,
     "attach_payment_proof": 1.0,
-    "human_action_needed": 1.0
+    "human_action_needed": 0.9666666666666667
   },
   "results": [
     {
@@ -23,7 +23,7 @@
         "to_email": "invoicing@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-NOPE."
       },
       "expected": {
         "intent": "payment_status",
@@ -62,7 +62,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
       },
       "expected": {
         "intent": "payment_status",
@@ -101,7 +101,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": true,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0002."
       },
       "expected": {
         "intent": "payment_status",
@@ -327,7 +327,7 @@
         "to_email": "payments@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-BLOCKED."
       },
       "expected": {
         "intent": "delay_reason",
@@ -366,7 +366,7 @@
         "to_email": "ap-owner@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-OVERDUE."
       },
       "expected": {
         "intent": "delay_reason",
@@ -483,7 +483,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
       },
       "expected": {
         "intent": "delay_reason",
@@ -522,7 +522,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
       },
       "expected": {
         "intent": "future_timing",
@@ -599,7 +599,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
       },
       "expected": {
         "intent": "payment_status",
@@ -673,7 +673,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-PARTIAL."
       },
       "expected": {
         "intent": "payment_status",
@@ -775,6 +775,388 @@
       "llm_calls": [
         "TriageOutput",
         "IntentOutput"
+      ]
+    },
+    {
+      "id": "021",
+      "path": "fixtures/emails/021_spf_only_fail_penalty.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "022",
+      "path": "fixtures/emails/022_content_duplicate_resubmit.json",
+      "actual": {
+        "intent": "unknown",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Eval draft."
+      },
+      "expected": {
+        "intent": null,
+        "ticket_status": "stopped",
+        "invoice_resolution": null,
+        "draft_target": null,
+        "to_email": null,
+        "attach_payment_proof": null,
+        "human_action_needed": false
+      },
+      "dimensions": {
+        "ticket_status": false,
+        "human_action_needed": false
+      },
+      "draft_judge": false,
+      "workflow_ok": false,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "023",
+      "path": "fixtures/emails/023_low_extraction_confidence.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing your request."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "024",
+      "path": "fixtures/emails/024_multilingual_portuguese.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "025",
+      "path": "fixtures/emails/025_adversarial_prompt_injection.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Eval draft."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "026",
+      "path": "fixtures/emails/026_overdue_invoice_in_approval.json",
+      "actual": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "approval_owners",
+        "to_email": "ap-owner@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-OVERDUE."
+      },
+      "expected": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "approval_owners",
+        "to_email": "ap-owner@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "027",
+      "path": "fixtures/emails/027_thread_continuation_context.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "approval_owners",
+        "to_email": "ap-owner@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Eval draft."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "approval_owners",
+        "to_email": "ap-owner@company.com",
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "028",
+      "path": "fixtures/emails/028_amount_mismatch_tolerance_edge.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "billing@acme-supplies.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "029",
+      "path": "fixtures/emails/029_spam_like_ap_content.json",
+      "actual": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": false,
+        "human_action_needed": true,
+        "generated_text": "Eval draft."
+      },
+      "expected": {
+        "intent": "delay_reason",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "not_found",
+        "draft_target": "invoicing",
+        "to_email": "invoicing@company.com",
+        "attach_payment_proof": null,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
+      ]
+    },
+    {
+      "id": "030",
+      "path": "fixtures/emails/030_subsidiary_domain_whitelisted.json",
+      "actual": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "ap@group-subsidiary.com",
+        "attach_payment_proof": true,
+        "human_action_needed": true,
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0002."
+      },
+      "expected": {
+        "intent": "payment_status",
+        "ticket_status": "awaiting_human",
+        "invoice_resolution": "match",
+        "draft_target": "sender",
+        "to_email": "ap@group-subsidiary.com",
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "dimensions": {
+        "intent": true,
+        "ticket_status": true,
+        "invoice_resolution": true,
+        "draft_target": true,
+        "to_email": true,
+        "attach_payment_proof": true,
+        "human_action_needed": true
+      },
+      "draft_judge": true,
+      "workflow_ok": true,
+      "llm_calls": [
+        "TriageOutput",
+        "IntentOutput",
+        "DraftOutput"
       ]
     }
   ],

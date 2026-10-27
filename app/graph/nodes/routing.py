@@ -19,10 +19,31 @@ def make_routing_node(deps: WorkflowDeps):
             domain = ticket.sender_email.rsplit("@", 1)[-1]
         rule = deps.senders.get_routing_rule(email=ticket.sender_email, domain=domain or None)
         default_op = deps.settings.DEFAULT_OPERATOR_ID
-        operator_id = rule.operator_id if rule is not None else default_op
+        no_rule_outcome = None
+        # no rule + hitl mode — don't assign anyone, still continue
+        if rule is None and deps.settings.ROUTING_NO_RULE_BEHAVIOUR == "hitl":
+            ticket.assigned_operator_id = None
+            ticket.updated_at = datetime.now(UTC)
+            saved = deps.tickets.save_ticket(ticket)
+            return {
+                "should_stop": False,
+                "ticket_id": str(saved.id),
+                "stop_reason": None,
+                "route": "resolution",
+                "routing_outcome": "no_rule_hitl",
+                "audit_action": AuditAction.MINE.value,
+                "audit_metadata": {"reason": "no_rule_hitl", "operator_id": None},
+            }
+        if rule is None:
+            # no rule otherwise — default operator
+            operator_id = default_op
+            no_rule_outcome = "no_rule_default"
+        else:
+            operator_id = rule.operator_id
         ticket.assigned_operator_id = operator_id
         ticket.updated_at = datetime.now(UTC)
 
+        # someone else's queue — stop
         if operator_id != default_op:
             ticket.status = TicketStatus.DELEGATED
             saved = deps.tickets.save_ticket(ticket)
@@ -35,14 +56,20 @@ def make_routing_node(deps: WorkflowDeps):
                 "audit_metadata": {"operator_id": operator_id},
             }
 
+        # ours — on to resolution
         saved = deps.tickets.save_ticket(ticket)
-        return {
+        metadata = {"operator_id": operator_id}
+        update = {
             "should_stop": False,
             "ticket_id": str(saved.id),
             "stop_reason": None,
             "route": "resolution",
             "audit_action": AuditAction.MINE.value,
-            "audit_metadata": {"operator_id": operator_id},
+            "audit_metadata": metadata,
         }
+        if no_rule_outcome is not None:
+            metadata["reason"] = no_rule_outcome
+            update["routing_outcome"] = no_rule_outcome
+        return update
 
     return routing

@@ -7,10 +7,40 @@ from pathlib import Path
 
 DIR = Path(__file__).resolve().parents[1] / "fixtures" / "emails"
 
-DRAFT = "Thank you. We are reviewing your request."
+PAID_CLAIMS = ["has been paid", "was paid"]
+
+# fixture id -> (ref the reply must cite, forbidden claims). The ref is the SAP
+# invoice the graph resolves to, not always the ref typed in the email (016).
+DRAFT_CHECKS = {
+    "001": ("INV-NOPE", PAID_CLAIMS),
+    "002": ("INV-2026-0001", PAID_CLAIMS),
+    "003": ("INV-2026-0002", ["not yet paid", "pending"]),
+    "009": ("INV-2026-BLOCKED", ["has been paid"]),
+    "010": ("INV-2026-OVERDUE", PAID_CLAIMS),
+    "011": (None, ["has been paid"]),
+    "012": (None, ["has been paid"]),
+    "013": ("INV-2026-0001", PAID_CLAIMS),
+    "014": ("INV-2026-0001", PAID_CLAIMS),
+    "016": ("INV-2026-0001", PAID_CLAIMS),
+    "018": ("INV-2026-PARTIAL", ["fully paid"]),
+}
+
+
+def _draft_fields(fid):
+    ref, forbidden = DRAFT_CHECKS[fid]
+    text = f"Thank you. We are reviewing invoice {ref}." if ref else "Thank you. We are reviewing your request."
+    return {
+        "generated_text": text,
+        "draft_checks": {
+            "required_tokens": [ref] if ref else [],
+            "forbidden_tokens": list(forbidden),
+        },
+    }
 
 
 def case(fid, name, frm, subject, body, expected, extra_input=None, settings=None, msg=None):
+    if fid in DRAFT_CHECKS:
+        expected = {**expected, **_draft_fields(fid)}
     payload = {
         "id": fid,
         "name": name,
@@ -49,7 +79,6 @@ CASES = [
             "to_email": "invoicing@company.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -69,7 +98,6 @@ CASES = [
             "to_email": "billing@acme-supplies.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -89,7 +117,6 @@ CASES = [
             "to_email": "billing@acme-supplies.com",
             "attach_payment_proof": True,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -202,7 +229,6 @@ CASES = [
             "to_email": "payments@company.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -222,7 +248,6 @@ CASES = [
             "to_email": "ap-owner@company.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -241,7 +266,6 @@ CASES = [
             "to_email": "invoicing@company.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -260,7 +284,6 @@ CASES = [
             "to_email": "invoicing@company.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -280,7 +303,6 @@ CASES = [
             "to_email": "billing@acme-supplies.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -300,7 +322,6 @@ CASES = [
             "to_email": "billing@acme-supplies.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -339,7 +360,6 @@ CASES = [
             "to_email": "billing@acme-supplies.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(
@@ -378,7 +398,6 @@ CASES = [
             "to_email": "billing@acme-supplies.com",
             "attach_payment_proof": False,
             "human_action_needed": True,
-            "generated_text": DRAFT,
         },
     ),
     case(

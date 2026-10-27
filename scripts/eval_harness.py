@@ -1,7 +1,9 @@
 """Golden eval against LangGraph ainvoke (not Launchpad workflow).
 
-Thread continuations are not in this suite: each fixture is a new ticket
-(unique message_id), matching the assistant harness default.
+Each fixture opens a fresh store. ``depends_on`` is not chained, so fixture
+022 cannot see the hash written by 002. That duplicate stop is covered by
+``tests/test_node_ingest.py``, not by this loop.
+A workflow field absent from ``expected`` is not scored. An explicit null is.
 Resolution retry stays off (RESOLUTION_RETRY_ENABLED default False).
 """
 
@@ -9,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -100,7 +103,19 @@ def _actual(deps, final: dict) -> dict:
 
 
 def score_dimensions(expected: dict, actual: dict) -> dict[str, bool]:
-    return {name: actual.get(name) == expected.get(name) for name in DIMENSIONS}
+    """Score only dimensions the fixture declares. A missing key is not a miss."""
+    return {
+        name: actual.get(name) == expected[name]
+        for name in DIMENSIONS
+        if name in expected
+    }
+
+
+def _eval_date(payload: dict) -> str | None:
+    received = payload.get("received_at")
+    if not isinstance(received, str) or not received.strip():
+        return None
+    return datetime.fromisoformat(received.strip()).date().isoformat()
 
 
 async def run_fixture(path: Path) -> dict:
@@ -112,13 +127,17 @@ async def run_fixture(path: Path) -> dict:
         settings=settings,
         llm=FixtureGuidedLLM(expected),
     )
-    final = await build_graph(deps).ainvoke({"raw_payload": data["input"]})
+    state: dict = {"raw_payload": data["input"]}
+    eval_date = _eval_date(data["input"])
+    if eval_date:
+        state["eval_date"] = eval_date
+    final = await build_graph(deps).ainvoke(state)
     actual = _actual(deps, final)
     dimensions = score_dimensions(expected, actual)
     draft_ok = judge_draft(
-        expected.get("generated_text"),
+        expected.get("draft_checks"),
         actual.get("generated_text"),
-        live=settings.EVAL_LIVE_LLM,
+        expect_draft=expected.get("draft_target") is not None,
     )
     return {
         "id": data.get("id") or path.stem,
@@ -137,9 +156,10 @@ async def run_all(directory: Path | None = None) -> dict:
     rows = [await run_fixture(path) for path in paths]
     n = len(rows) or 1
     success = sum(1 for row in rows if row["workflow_ok"]) / n
-    per_dim = {
-        name: sum(1 for row in rows if row["dimensions"][name]) / n for name in DIMENSIONS
-    }
+    per_dim = {}
+    for name in DIMENSIONS:
+        scored = [row["dimensions"][name] for row in rows if name in row["dimensions"]]
+        per_dim[name] = sum(scored) / len(scored) if scored else 0.0
     return {
         "success": success,
         "threshold": Settings().WORKFLOW_SUCCESS_THRESHOLD,

@@ -19,6 +19,7 @@ class TicketTable(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     thread_id: str = Field(index=True)
     message_id: str = Field(index=True, unique=True)
+    provider_message_id: str | None = Field(default=None, index=True)
     sender_email: str = Field(index=True)
     subject: str
     body: str = Field(sa_column=Column(Text, nullable=False))
@@ -30,6 +31,8 @@ class TicketTable(SQLModel, table=True):
     assigned_operator_id: str | None = None
     confidence: float | None = None
     is_thread_continuation: bool = False
+    content_hash: str | None = Field(default=None, max_length=16, index=True)
+    hitl_deadline: datetime | None = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
 

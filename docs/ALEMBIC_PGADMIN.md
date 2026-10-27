@@ -142,3 +142,50 @@ alembic current
 ```
 
 In pgAdmin, refresh schema `public` — you should see the extra tables next to `tickets`.
+
+## Operators and sessions (`88673197cd63`)
+
+Expand-only migration. It creates tables and indexes. It does not alter tickets, reviews, or the other Day 3 tables.
+
+- `operators`: `id` (string PK, same shape as `op_joao`), unique `email`, `display_name`, `password_hash` (Argon2), `is_active`, `created_at` `TIMESTAMPTZ`
+- `operator_sessions`: UUID PK, unique `token_hash` (SHA-256 hex of the cookie), `operator_id` FK to `operators.id` with `ON DELETE CASCADE`, `created_at`, `expires_at`, nullable `revoked_at`. All four timestamps are `TIMESTAMPTZ`
+- `downgrade()` drops `operator_sessions` before `operators`
+
+There is still no FK from `human_reviews.operator_id` to `operators.id`. Reviews written before operators existed would not match.
+
+Passwords are not in the migration. Create a login with:
+
+```powershell
+python scripts/seed_operator.py --id op_joao --email joao@company.com --name "João"
+```
+
+The script prompts twice and stores only the hash. Running it again resets that operator's password.
+
+```bash
+alembic upgrade head
+alembic current
+```
+
+`alembic_version` should read `88673197cd63`. In pgAdmin, refresh `public` and you should see `operators` and `operator_sessions`.
+
+## Ticket content hash (`f3a91c2e8b40`)
+
+Expand-only. Adds nullable `tickets.content_hash` (`VARCHAR(16)`) and a non-unique index `ix_tickets_content_hash`. Existing rows stay `NULL` and are not backfilled. New ingest writes the hash of sender, subject, and the first 300 characters of the body.
+
+```bash
+alembic upgrade head
+alembic current
+```
+
+`alembic_version` should read `f3a91c2e8b40`.
+
+## Ticket HITL deadline (`a8c2e4b19d70`)
+
+Expand-only. Adds nullable `tickets.hitl_deadline` (`timestamp`) and a non-unique index `ix_tickets_hitl_deadline`. Existing rows stay `NULL` and are not backfilled. The HITL node writes 00:00 UTC on the invoice due date, or now plus 24 hours when there is no due date.
+
+```bash
+alembic upgrade head
+alembic current
+```
+
+`alembic_version` should read `a8c2e4b19d70`.

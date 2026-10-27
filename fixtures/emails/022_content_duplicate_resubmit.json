@@ -1,0 +1,19 @@
+{
+  "id": "022",
+  "name": "content_duplicate_resubmit",
+  "input": {
+    "thread_id": "thread-eval-022",
+    "message_id": "msg-eval-022-RESEND",
+    "from": "billing@acme-supplies.com",
+    "subject": "Payment status INV-2026-0001",
+    "body": "Please confirm payment status for INV-2026-0001 amount 1250.",
+    "received_at": "2026-09-04T11:00:00+00:00"
+  },
+  "expected": {
+    "ticket_status": "stopped",
+    "stop_reason": "duplicate",
+    "human_action_needed": false
+  },
+  "depends_on": "002",
+  "notes": "Same sender+subject+body[:300] as fixture 002, but different message_id. Content hash matches → ingest stops with stop_reason=duplicate. The golden loop opens a fresh store per fixture, so depends_on is not applied and this case fails here on purpose. Dedup is covered by tests/test_node_ingest.py."
+}

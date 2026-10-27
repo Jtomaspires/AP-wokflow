@@ -30,7 +30,13 @@ def ticket_detail(deps: WorkflowDeps, ticket: Ticket) -> dict:
     body["draft"] = draft.model_dump(mode="json") if draft else None
     body["invoice"] = invoice.model_dump(mode="json") if invoice else None
     body["audit"] = [
-        {"node": e.node, "action": e.action.value, "metadata": e.metadata}
+        {
+            "node": e.node,
+            "action": e.action.value,
+            "confidence": e.confidence,
+            "created_at": e.created_at.isoformat(),
+            "metadata": e.metadata,
+        }
         for e in audit
     ]
     return body

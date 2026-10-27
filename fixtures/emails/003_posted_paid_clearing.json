@@ -20,6 +20,15 @@
     "to_email": "billing@acme-supplies.com",
     "attach_payment_proof": true,
     "human_action_needed": true,
-    "generated_text": "Thank you. We are reviewing your request."
+    "generated_text": "Thank you. We are reviewing invoice INV-2026-0002.",
+    "draft_checks": {
+      "required_tokens": [
+        "INV-2026-0002"
+      ],
+      "forbidden_tokens": [
+        "not yet paid",
+        "pending"
+      ]
+    }
   }
 }

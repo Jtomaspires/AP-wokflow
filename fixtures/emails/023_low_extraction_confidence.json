@@ -1,0 +1,30 @@
+{
+  "id": "023",
+  "name": "low_extraction_confidence",
+  "input": {
+    "thread_id": "thread-eval-023",
+    "message_id": "msg-eval-023",
+    "from": "billing@acme-supplies.com",
+    "subject": "About that invoice",
+    "body": "Hi, regarding the invoice we sent last month, maybe around a thousand euros, could you check? Not sure of the exact reference.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": null,
+    "extracted_amount": null,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "not_found",
+    "draft_target": "invoicing",
+    "to_email": "invoicing@company.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing your request.",
+    "draft_checks": {
+      "required_tokens": [],
+      "forbidden_tokens": ["has been paid", "INV-"]
+    }
+  },
+  "notes": "Vague body with no clear ref or amount. extraction_confidence expected < 0.5 from LLM → resolution ignores extracted values → not_found. Fix 4 coverage. Tests that the system handles ambiguous supplier language gracefully."
+}

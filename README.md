@@ -40,7 +40,7 @@ Operators sign in to the React console in `frontend/`, or call the API with the 
 
 ## Happy path
 
-Webhook → inbound graph → `AWAITING_HUMAN` → approve → mock send.
+Inbound mail → graph → `AWAITING_HUMAN` → approve → send. With `NYLAS_SEND_ENABLED` off, send is a mock and the ticket becomes `resolved`. With the flag, the API key, and the grant all set, Approve calls Nylas. Flag on without those credentials, or a Nylas error, leaves the ticket `awaiting_human`.
 
 <div align="center">
 
@@ -50,9 +50,10 @@ Webhook → inbound graph → `AWAITING_HUMAN` → approve → mock send.
 
 | Step | What happens |
 |---|---|
-| `POST /webhook/mock` | Celery runs the **inbound** graph only |
+| `POST /webhook/mock` | Celery runs the **inbound** graph only. `scripts/poll_nylas.py` posts here after it polls the grant inbox. |
+| `POST /webhook/nylas` | Same enqueue, from a Nylas `message.created` notification. HMAC with `NYLAS_WEBHOOK_SECRET`. Public. No tunnel is required if you use the poller. |
 | HITL | Ticket status `awaiting_human`; draft stored if the decision table allows |
-| `POST /tickets/{id}/approve` | Session operator; `HitlService` runs the send node (not on the inbound spine) |
+| `POST /tickets/{id}/approve` | Session operator; `HitlService` runs the send node in the **API** process (not on the inbound spine, not in Celery) |
 | Escalate | Same session; status `escalated`, no send |
 
 Resolution can retry **once** with wider match tolerances when `RESOLUTION_RETRY_ENABLED=true`. Default is **off** so golden eval stays comparable to the original assistant.
@@ -65,11 +66,11 @@ Resolution can retry **once** with wider match tolerances when `RESOLUTION_RETRY
 - **Triage / intent** — AP vs discard; payment status, delay reason, future timing (LLM behind `LLMPort`)
 - **Routing** — MINE vs DELEGATE from sender directory rules
 - **Resolution** — exact ref → fuzzy ≥ 0.85 → amount ± tolerance + supplier; VAT notes; PAID without clearing → HITL
-- **Draft** — deterministic target (sender / invoicing / payments / approval owners). The prompt carries the matched invoice (amount, stage, due date, clearing, payment date, blocking reason). The model writes `generated_text` only, and may say the invoice is paid only when a clearing document exists.
-- **HITL API** — list/get tickets, draft, approve, escalate, stats. These routes need a session. Approve and escalate record that operator. 409 if the ticket is not awaiting a human. Ticket detail audit rows include `confidence` and `created_at`.
-- **Auth** — operators live in Postgres (`operators`, `operator_sessions`). Passwords are Argon2. The cookie is `HttpOnly` and holds a random token; Postgres stores only its SHA-256. Auth is not a workflow port: the graph never sees who is logged in. `/health`, `/ingest`, and `/webhook/mock` stay public.
+- **Draft** — deterministic target (sender / invoicing / payments / approval owners). The prompt carries the matched invoice (amount, stage, due date, clearing, payment date, blocking reason). The model writes `generated_text` only, and may say the invoice is paid only when a clearing document exists. Target `sender` is a reply to the supplier. `invoicing`, `payments`, and `approval_owners` are an internal note to that mailbox: the text names the supplier and does not thank them. Approve sends to `draft.to_email`, which for a not-found invoice is `INVOICING_EMAIL`.
+- **HITL API** — list/get tickets, draft, approve, escalate, stats. These routes need a session. Approve and escalate record that operator. 409 if the ticket is not awaiting a human, or if Approve has no draft. Ticket detail audit rows include `confidence` and `created_at`.
+- **Auth** — operators live in Postgres (`operators`, `operator_sessions`). Passwords are Argon2. The cookie is `HttpOnly` and holds a random token; Postgres stores only its SHA-256. Auth is not a workflow port: the graph never sees who is logged in. `/health`, `/ingest`, `/webhook/mock`, and `/webhook/nylas` stay public.
 
-Early exits: missing ids, duplicate, quarantine, discard, delegate.
+Early exits: missing ids, duplicate (message id or content hash), quarantine, discard, delegate, escalated thread.
 
 ---
 
@@ -80,12 +81,12 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 - **Deterministic + LLM hybrid** — invoice matching and draft target selection are pure rules; triage, intent classification, VAT reasoning, and draft text are structured LLM calls. The system knows what it can decide without a model.
 - **Hexagonal architecture** — 7 ports (Email, Tickets, LLM, SAP, Audit, Senders, Drafts) with adapters that swap cleanly. `WorkflowDeps` is closed in node factories, never put in graph state.
 - **Graph-native orchestration** — LangGraph `StateGraph` with conditional edges; inbound ends at HITL. Approve runs `make_send_node` outside the inbound spine (option 2 — no checkpointer needed).
-- **Eval harness** — 20 golden fixture emails, `FixtureGuidedLLM`, full `ainvoke`; exits 1 if success rate < 0.80.
+- **Eval harness** — 30 golden fixture emails, `FixtureGuidedLLM`, full `ainvoke`; exits 1 if success rate < 0.80. The checked-in baseline is 29/30 (0.967). Fixture 022 expects a content-hash duplicate of 002, and the harness opens a fresh store per file, so that row fails on purpose. Dedup is covered in `tests/test_node_ingest.py`.
 
 ### Architecture highlights
 
 - **Inbound spine**: FastAPI → Celery → LangGraph nodes → `AWAITING_HUMAN`
-- **Approval path**: HTTP `POST /approve` → `HitlService` → send node (mock)
+- **Approval path**: HTTP `POST /approve` → `HitlService` → send node. Mock when `NYLAS_SEND_ENABLED` is false. With the flag, key, and grant set, `POST /v3/grants/{id}/messages/send` to `draft.to_email`. Missing credentials or a Nylas error do not resolve the ticket.
 - **Storage**: Postgres for tickets, audit, drafts, operators, and sessions; JSON fixtures for SAP and the sender directory
 - **Isolation**: in-memory adapters in tests and eval — no Docker needed to run the graph
 
@@ -96,7 +97,7 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 | Layer | Tech |
 |---|---|
 | Graph | LangGraph |
-| API | FastAPI (`/webhook/mock`, `/tickets`, approve/escalate, `/auth` cookie sessions with Argon2 passwords) |
+| API | FastAPI (`/webhook/mock`, `/webhook/nylas`, `/tickets`, approve/escalate, `/auth` cookie sessions with Argon2 passwords) |
 | Queue | Celery + Redis (Windows: `--pool=solo`) |
 | Store | Postgres via Alembic migrations |
 
@@ -117,10 +118,10 @@ Early exits: missing ids, duplicate, quarantine, discard, delegate.
 | Framework | Vite 6 + React + TypeScript |
 | UI | shadcn/ui (Radix, Tailwind 4): status tiles, ticket feed, tabbed detail, review dialog, toasts |
 | Auth | `/login`, cookie session, route guard. The header shows the signed-in operator. |
-| State | REST polling (no websockets) |
+| State | REST on mount, filter change, ticket select, and Refresh (no polling, no websockets) |
 | Port | 5173 (API on 8000). Use `localhost` on both, or the cookie is not sent. |
 
-**Not yet implemented:** live SAP connector, real email send (Nylas), OCR on attachments, multi-tenant auth.
+**Not yet implemented:** live SAP connector, OCR on attachments, multi-tenant auth. Nylas send is implemented (flag, key, and grant). Inbound mail can arrive through `POST /webhook/nylas` or through `scripts/poll_nylas.py` into `/webhook/mock`.
 
 ---
 
@@ -130,11 +131,14 @@ If SAP says paid and there's no clearing document, we still don't tell the suppl
 
 ```mermaid
 flowchart TD
+  POLL[poll_nylas.py] --> START
+  NYLAS[POST /webhook/nylas] --> START
   START([POST /webhook/mock]) --> ingest
   ingest -->|missing ids or duplicate| E1[END]
   ingest --> security
   security -->|quarantine| E2[END]
   security --> thread
+  thread -->|escalated| E2b[END]
   thread -->|continuation| resolution
   thread -->|new| triage
   triage -->|discard| E3[END]
@@ -149,12 +153,26 @@ flowchart TD
   hitl -->|AWAITING_HUMAN| wait[Wait for HTTP]
   wait -->|POST approve| send
   wait -->|POST escalate| E5[END]
-  send --> E6[END]
+  send -->|flag off| E6[END mock]
+  send -->|flag on, key and grant| NYOUT[Nylas messages/send]
+  send -->|missing creds or error| E7[stays AWAITING_HUMAN]
 ```
 
 Retry logic stays inside `resolution` — no extra graph nodes.
 
-There's still a lot to do. Live SAP, real email sending, OCR for attachments, multi-operator routing at scale — this is a working proof of concept, not a finished product.
+There's still a lot to do. Live SAP, OCR for attachments, multi-operator routing at scale — this is a working proof of concept, not a finished product. Email send is the Nylas grant on Approve, not a live mailbox connector of its own.
+
+## Known limits
+
+These three eval cases reach a human with no draft. The system does not escalate by itself. Escalate is the operator's action when there is nothing safe to send.
+
+| Case | Behaviour | Why | Next step |
+|---|---|---|---|
+| VAT mismatch (`007`) | `awaiting_human`, match `vat_discrepancy`, no draft | A VAT discrepancy has no reply target, so the draft prompt never runs. The operator note says the extracted amount looks VAT-inclusive. | Show the gross and net amounts on the invoice tab before anyone writes a reply |
+| Paid, no clearing document (`019`) | Invoice matches, `awaiting_human`, no draft | By design. SAP says paid, but there is no clearing document, so the supplier is not told it was paid. | Tell the sender when clearing arrives. Out of scope here. |
+| Same ref in two SAP tables (`008`) | `awaiting_human`, match `multiple`, no draft | The ref is ambiguous. The system stops instead of picking one invoice. | Fine for now |
+
+Day-to-day approve and escalate rules: [docs/OPERATOR_GUIDE.md](docs/OPERATOR_GUIDE.md).
 
 ---
 
@@ -164,12 +182,11 @@ Postgres **5434**, Redis **6380**. From this directory:
 
 ```powershell
 docker compose up -d
-copy .env.dev .env
 alembic upgrade head
 python scripts/seed_operator.py --id op_joao --email joao@company.com --name "João"
 ```
 
-Fix `DATABASE_URL` in `.env` to `lab:lab_dev` if compose uses those credentials. The seed script prompts for the operator password.
+Copy `.env.dev` to `.env` only on a new machine. Doing it again wipes `NYLAS_API_KEY`, `NYLAS_GRANT_ID`, and `NYLAS_SEND_ENABLED`. Fix `DATABASE_URL` in `.env` to `lab:lab_dev` if compose uses those credentials. The seed script prompts for the operator password.
 
 **1 — API**
 
@@ -183,7 +200,13 @@ uvicorn app.api.main:app --reload --port 8000
 celery -A app.worker.tasks:celery_app worker --pool=solo --loglevel=info
 ```
 
-**3 — Ingest** (whitelisted `acme-supplies.com`). Without `LLM_PRIMARY_API_KEY`, triage and intent stay fixed on AP + `INV-2026-0001`. With a key, the email text drives those calls. Restart the worker after changing the key.
+**3 — Nylas inbox poll** (no tunnel). Needs `NYLAS_API_KEY` and `NYLAS_GRANT_ID`. Ignores mail already in the inbox when the process starts.
+
+```powershell
+python scripts/poll_nylas.py
+```
+
+**4 — Ingest** (whitelisted `acme-supplies.com`). Without `LLM_PRIMARY_API_KEY`, triage and intent stay fixed on AP + `INV-2026-0001`. With a key, the email text drives those calls. Restart the worker after changing the key.
 
 ```powershell
 curl -s -X POST http://127.0.0.1:8000/webhook/mock -H "Content-Type: application/json" -d "{\"thread_id\":\"t1\",\"message_id\":\"msg-demo-1\",\"from\":\"billing@acme-supplies.com\",\"subject\":\"Invoice INV-2026-0001\",\"body\":\"Please confirm payment status\"}"
@@ -204,7 +227,7 @@ The approver recorded on the review is the logged-in operator, not a field in th
 
 Unknown domain (`evil.example`) → `quarantined`. High-confidence non-AP → `discarded`. Other operator → `delegated`.
 
-**4 — Operator UI** (API on port 8000)
+**5 — Operator UI** (API on port 8000)
 
 ```powershell
 cd frontend

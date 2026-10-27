@@ -20,6 +20,7 @@ class MockEmailAdapter(EmailPort):
         return IncomingEmail(
             thread_id=payload.get("thread_id"),
             message_id=payload.get("message_id"),
+            provider_message_id=payload.get("provider_message_id"),
             from_email=payload.get("from") or payload.get("from_email") or "",
             subject=payload.get("subject") or "",
             body=payload.get("body") or "",

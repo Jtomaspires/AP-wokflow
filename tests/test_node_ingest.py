@@ -53,6 +53,35 @@ def test_duplicate_message_id_does_not_create_second_ticket():
     assert store.get_by_message_id("msg-1").subject == "Invoice INV-2026-0001"
 
 
+def test_resubmit_different_message_id_same_content_is_duplicate():
+    store = InMemoryTicketStore()
+    ingest = make_ingest_node(_deps(store))
+
+    first = ingest({"raw_payload": _payload()})
+    second = ingest({"raw_payload": _payload(message_id="msg-2")})
+
+    assert first["should_stop"] is False
+    assert second["should_stop"] is True
+    assert second["stop_reason"] == "duplicate"
+    assert second["audit_metadata"]["reason"] == "content_duplicate"
+    assert second["ticket_id"] == first["ticket_id"]
+    assert len(store._by_id) == 1
+
+
+def test_same_content_hash_different_sender_is_new():
+    store = InMemoryTicketStore()
+    ingest = make_ingest_node(_deps(store))
+
+    first = ingest({"raw_payload": _payload()})
+    resent = _payload(message_id="msg-2")
+    resent["from"] = "other@vendor.com"
+    second = ingest({"raw_payload": resent})
+
+    assert first["should_stop"] is False
+    assert second["should_stop"] is False
+    assert len(store._by_id) == 2
+
+
 def test_missing_thread_id_stops_without_ticket():
     store = InMemoryTicketStore()
     ingest = make_ingest_node(_deps(store))

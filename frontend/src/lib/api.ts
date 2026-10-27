@@ -6,6 +6,7 @@ import type {
   TicketDetail,
   TicketStatus,
 } from "../types/ticket";
+import type { Operator } from "../types/auth";
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:8000";
 
@@ -20,11 +21,18 @@ export class ApiError extends Error {
   }
 }
 
+let onUnauthorized: (() => void) | null = null;
+
+export function setUnauthorizedHandler(fn: (() => void) | null) {
+  onUnauthorized = fn;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${BASE}${path}`, {
       ...init,
+      credentials: "include",
       headers: {
         Accept: "application/json",
         ...(init?.body ? { "Content-Type": "application/json" } : {}),
@@ -50,6 +58,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       data && typeof data === "object" && "detail" in data
         ? String((data as { detail: unknown }).detail)
         : response.statusText;
+    if (response.status === 401 && path !== "/auth/login" && path !== "/auth/me") {
+      onUnauthorized?.();
+    }
     throw new ApiError(response.status, detail);
   }
   return data as T;
@@ -72,13 +83,26 @@ export async function getTicket(id: string): Promise<TicketDetail> {
   return request(`/tickets/${id}`);
 }
 
+export function login(email: string, password: string): Promise<Operator> {
+  return request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function logout(): Promise<void> {
+  return request("/auth/logout", { method: "POST" });
+}
+
+export function getMe(): Promise<Operator> {
+  return request("/auth/me");
+}
+
 export async function approveTicket(
   id: string,
-  body: { operator_id: string; final_text?: string },
+  body: { final_text?: string },
 ): Promise<ApproveResponse> {
-  const payload: { operator_id: string; final_text?: string } = {
-    operator_id: body.operator_id,
-  };
+  const payload: { final_text?: string } = {};
   if (body.final_text !== undefined) {
     payload.final_text = body.final_text;
   }
@@ -88,12 +112,8 @@ export async function approveTicket(
   });
 }
 
-export async function escalateTicket(
-  id: string,
-  body: { operator_id: string },
-): Promise<EscalateResponse> {
+export async function escalateTicket(id: string): Promise<EscalateResponse> {
   return request(`/tickets/${id}/escalate`, {
     method: "POST",
-    body: JSON.stringify(body),
   });
 }

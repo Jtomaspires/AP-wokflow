@@ -27,9 +27,12 @@ class Settings(BaseSettings):
     RESOLUTION_RETRY_FUZZY_FLOOR: float = 0.75
     WORKFLOW_SUCCESS_THRESHOLD: float = 0.80
     EVAL_LIVE_LLM: bool = False
+    THREAD_MAX_HISTORY_CHARS: int = 2000
+    HITL_DEFAULT_DEADLINE_H: int = 24
 
     # Routing
     DEFAULT_OPERATOR_ID: str = "op_joao"
+    ROUTING_NO_RULE_BEHAVIOUR: str = "default"  # "default" | "hitl"
 
     # Auth
     SESSION_COOKIE_NAME: str = "p2p_session"
@@ -53,10 +56,14 @@ class Settings(BaseSettings):
 
     # Feature flags (safe development defaults)
     NYLAS_SEND_ENABLED: bool = False
+    NYLAS_API_KEY: str | None = None
+    NYLAS_API_URI: str = "https://api.us.nylas.com"
+    NYLAS_GRANT_ID: str | None = None
+    NYLAS_WEBHOOK_SECRET: str | None = None
     SPF_DKIM_ENABLED: bool = False
     SECURITY_CHECK_ENABLED: bool = True
     SENDER_DOMAIN_WHITELIST: str = (
-        "acme-supplies.com,group-subsidiary.com,p2p-branch.com,company.com,vendor.com"
+        "acme-supplies.com,group-subsidiary.com,p2p-branch.com,company.com,vendor.com,gmail.com"
     )
     TRIAGE_DISCARD_MIN_CONFIDENCE: float = 0.8
     INTENT_MIN_CONFIDENCE: float = 0.5
@@ -67,6 +74,9 @@ class Settings(BaseSettings):
         "LLM_FALLBACK_MODEL",
         "LLM_FALLBACK_API_KEY",
         "LLM_FALLBACK_BASE_URL",
+        "NYLAS_API_KEY",
+        "NYLAS_GRANT_ID",
+        "NYLAS_WEBHOOK_SECRET",
         mode="before",
     )
     @classmethod
@@ -77,6 +87,17 @@ class Settings(BaseSettings):
         stripped = value.strip()
         if not stripped or (stripped.startswith("<") and stripped.endswith(">")):
             return None
+        return stripped
+
+    @field_validator("NYLAS_API_URI", mode="before")
+    @classmethod
+    def blank_nylas_api_uri_is_us_default(cls, value: Any) -> Any:
+        """A blank env line must not replace the US Nylas host."""
+        if not isinstance(value, str):
+            return value
+        stripped = value.strip()
+        if not stripped or (stripped.startswith("<") and stripped.endswith(">")):
+            return "https://api.us.nylas.com"
         return stripped
 
     model_config = SettingsConfigDict(

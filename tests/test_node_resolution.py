@@ -231,3 +231,63 @@ async def test_resolution_vat_discrepancy_uses_llm_notes():
     assert update["match_result"] == InvoiceMatchResult.VAT_DISCREPANCY.value
     assert update["requires_hitl"] is True
     assert "vat" in (update["vat_notes"] or "").lower()
+
+
+@pytest.mark.asyncio
+async def test_low_extraction_confidence_ignores_ref():
+    ticket = _ticket()
+    deps = make_test_deps()
+    deps.tickets.save_ticket(ticket)
+    update = await make_resolution_node(deps)(
+        {
+            "ticket_id": str(ticket.id),
+            "extracted_ref": "INV-2026-0001",
+            "extracted_amount": 1250.0,
+            "extraction_confidence": 0.3,
+        }
+    )
+    assert update["match_result"] == InvoiceMatchResult.NOT_FOUND.value
+    assert update["invoice_ref"] is None
+
+
+@pytest.mark.asyncio
+async def test_eval_date_marks_invoice_overdue_only_after_due_date():
+    ticket = _ticket()
+    deps = make_test_deps()
+    deps.tickets.save_ticket(ticket)
+    before = await make_resolution_node(deps)(
+        {
+            "ticket_id": str(ticket.id),
+            "extracted_ref": "INV-2026-0001",
+            "extracted_amount": 1250.0,
+            "eval_date": "2026-09-04",
+        }
+    )
+    assert before["is_overdue"] is False
+    assert before["is_near_due"] is False
+
+    after = await make_resolution_node(deps)(
+        {
+            "ticket_id": str(ticket.id),
+            "extracted_ref": "INV-2026-0001",
+            "extracted_amount": 1250.0,
+            "eval_date": "2026-10-13",
+        }
+    )
+    assert after["is_overdue"] is True
+
+
+async def test_high_extraction_confidence_uses_ref():
+    ticket = _ticket()
+    deps = make_test_deps()
+    deps.tickets.save_ticket(ticket)
+    update = await make_resolution_node(deps)(
+        {
+            "ticket_id": str(ticket.id),
+            "extracted_ref": "INV-2026-0001",
+            "extracted_amount": 1250.0,
+            "extraction_confidence": 0.8,
+        }
+    )
+    assert update["match_result"] == InvoiceMatchResult.MATCH.value
+    assert update["match_method"] == "exact"

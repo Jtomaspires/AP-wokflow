@@ -42,6 +42,7 @@ class RoutingRule(BaseModel):
 class Ticket(BaseModel):
     thread_id: str
     message_id: str
+    provider_message_id: str | None = None
     sender_email: str
     subject: str
     body: str
@@ -54,6 +55,8 @@ class Ticket(BaseModel):
     assigned_operator_id: str | None = None
     confidence: float | None = None
     is_thread_continuation: bool = False
+    content_hash: str | None = None
+    hitl_deadline: datetime | None = None
     created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
 

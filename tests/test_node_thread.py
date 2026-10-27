@@ -7,7 +7,7 @@ from app.adapters.memory_ticket_store import InMemoryTicketStore
 from app.domain.enums import TicketStatus
 from app.domain.models import Ticket
 from app.graph.nodes.ingest import make_ingest_node
-from app.graph.nodes.thread import make_thread_node
+from app.graph.nodes.thread import _truncate_history, make_thread_node
 from tests.helpers import make_test_deps
 
 
@@ -87,3 +87,30 @@ def test_escalated_thread_stops():
     update = make_thread_node(deps)(after)
     assert update["should_stop"] is True
     assert update["stop_reason"] == "escalated_thread"
+
+
+_MARKER = "[...earlier messages truncated...]"
+_SEP = "\n\n---\n\n"
+
+
+def test_truncate_history_leaves_short_body_unchanged():
+    body = "Previous\n\n---\n\nStill unpaid"
+    result = _truncate_history(body, 2000)
+    assert result == body
+    assert not result.startswith(_MARKER)
+
+
+def test_truncate_history_keeps_last_chars_without_separator():
+    body = ("x" * 2500) + "latest message"
+    result = _truncate_history(body, 2000)
+    assert result.startswith(f"{_MARKER}{_SEP}")
+    assert result[len(_MARKER) + len(_SEP) :] == body[-2000:]
+    assert result.endswith("latest message")
+
+
+def test_truncate_history_starts_after_separator_in_window():
+    body = ("a" * 3000) + "DROPME" + ("b" * 50) + _SEP + "latest message"
+    result = _truncate_history(body, 2000)
+    assert result == f"{_MARKER}{_SEP}latest message"
+    assert "DROPME" not in result
+    assert "aaa" not in result

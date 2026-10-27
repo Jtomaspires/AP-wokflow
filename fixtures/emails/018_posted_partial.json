@@ -20,6 +20,14 @@
     "to_email": "billing@acme-supplies.com",
     "attach_payment_proof": false,
     "human_action_needed": true,
-    "generated_text": "Thank you. We are reviewing your request."
+    "generated_text": "Thank you. We are reviewing invoice INV-2026-PARTIAL.",
+    "draft_checks": {
+      "required_tokens": [
+        "INV-2026-PARTIAL"
+      ],
+      "forbidden_tokens": [
+        "fully paid"
+      ]
+    }
   }
 }

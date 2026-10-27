@@ -1,6 +1,6 @@
 """Resolution: SAP match ladder, optional one-shot retry inside this node."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from pydantic import BaseModel
 
@@ -22,6 +22,18 @@ class VATReasoningOutput(BaseModel):
     notes: str
 
 
+def _as_of(state: LabState) -> date | None:
+    # eval freezes "today" to the mail date; missing → due_flags uses today
+    raw = state.get("eval_date")
+    if isinstance(raw, datetime):
+        return raw.date()
+    if isinstance(raw, date):
+        return raw
+    if isinstance(raw, str) and raw.strip():
+        return datetime.fromisoformat(raw.strip()).date()
+    return None
+
+
 def make_resolution_node(deps: WorkflowDeps):
     async def resolution(state: LabState) -> dict:
         ticket = load_ticket(deps, state)
@@ -30,6 +42,11 @@ def make_resolution_node(deps: WorkflowDeps):
 
         extracted_ref = state.get("extracted_ref")
         extracted_amount = state.get("extracted_amount")
+        # shaky extraction — don't match on it
+        if state.get("extraction_confidence", 1.0) < 0.5:
+            extracted_ref = None
+            extracted_amount = None
+        # known sender → company, else the raw address
         sender = deps.senders.get_by_email(ticket.sender_email)
         supplier_hint = sender.company if sender else ticket.sender_email
         kwargs = dict(
@@ -39,10 +56,12 @@ def make_resolution_node(deps: WorkflowDeps):
             extracted_amount=extracted_amount,
             supplier_hint=supplier_hint,
         )
+        # tight pass first
         first = match_invoices(settings=deps.settings, **kwargs)
         outcome = first
         retry_n = 0
         retry_meta: dict = {}
+        # one wider retry when the first pass says so
         if should_retry_match(first, deps.settings, retry_n=0):
             wide = widened_match_settings(deps.settings)
             second = match_invoices(
@@ -68,6 +87,7 @@ def make_resolution_node(deps: WorkflowDeps):
         requires_hitl = outcome.requires_hitl
         invoice = outcome.invoice
 
+        # amount looks like gross (net + vat) — not a clean match
         if (
             invoice is not None
             and result is InvoiceMatchResult.MATCH
@@ -88,6 +108,7 @@ def make_resolution_node(deps: WorkflowDeps):
             result = InvoiceMatchResult.VAT_DISCREPANCY
             requires_hitl = True
 
+        # paid in SAP but no clearing doc — human checks
         if (
             invoice is not None
             and invoice.status is InvoiceStatus.PAID
@@ -95,7 +116,8 @@ def make_resolution_node(deps: WorkflowDeps):
         ):
             requires_hitl = True
 
-        overdue, near = due_flags(invoice, deps.settings)
+        # overdue / coming due, vs eval date or today
+        overdue, near = due_flags(invoice, deps.settings, today=_as_of(state))
         ticket.updated_at = datetime.now(UTC)
         deps.tickets.save_ticket(ticket)
 

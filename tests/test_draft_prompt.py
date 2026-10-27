@@ -51,7 +51,8 @@ def test_prompt_contains_invoice_facts_and_original_body():
     assert "Amount: 980.50 EUR" in prompt
     assert "Status: paid" in prompt
     assert "Clearing document: yes" in prompt
-    assert "Reply to: billing@acme-supplies.com (sender)" in prompt
+    assert "Reply to: billing@acme-supplies.com" in prompt
+    assert "Original message from billing@acme-supplies.com:" in prompt
     assert "Need proof for INV-2026-0002 / 980.50 EUR." in prompt
 
 
@@ -64,6 +65,21 @@ def test_prompt_without_invoice_has_no_invoice_lines():
     prompt = _prompt(None)
     assert "Invoice ref" not in prompt
     assert "Match result: match" in prompt
+
+
+def test_internal_target_is_not_a_supplier_reply():
+    prompt = build_draft_user_prompt(
+        ticket=_ticket(),
+        invoice=None,
+        target=DraftTarget.INVOICING,
+        to_email="invoicing@company.com",
+        match_result=InvoiceMatchResult.NOT_FOUND,
+        intent=Intent.PAYMENT_STATUS,
+    )
+    assert "Write an internal email to: invoicing@company.com (invoicing team)" in prompt
+    assert "The supplier billing@acme-supplies.com sent this request:" in prompt
+    assert "Do not address the supplier directly. Do not thank them." in prompt
+    assert "Reply to:" not in prompt
 
 
 def test_prompt_is_deterministic():

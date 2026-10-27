@@ -2,14 +2,36 @@ from pathlib import Path
 
 import pytest
 
-from scripts.eval_harness import DIMENSIONS, load_fixtures, run_fixture
+from scripts.eval_harness import (
+    DIMENSIONS,
+    load_fixtures,
+    run_fixture,
+    score_dimensions,
+)
 
 
-def test_twenty_golden_fixtures_present():
+def test_undeclared_expected_field_is_not_scored():
+    scores = score_dimensions(
+        {"ticket_status": "awaiting_human"},
+        {"ticket_status": "awaiting_human", "attach_payment_proof": False},
+    )
+    assert "attach_payment_proof" not in scores
+    assert scores["ticket_status"] is True
+
+
+def test_explicit_null_expected_field_is_scored():
+    scores = score_dimensions(
+        {"attach_payment_proof": None},
+        {"attach_payment_proof": False},
+    )
+    assert scores["attach_payment_proof"] is False
+
+
+def test_thirty_golden_fixtures_present():
     paths = load_fixtures()
-    assert len(paths) == 20
+    assert len(paths) == 30
     stems = {p.name[:3] for p in paths}
-    assert stems == {f"{i:03d}" for i in range(1, 21)}
+    assert stems == {f"{i:03d}" for i in range(1, 31)}
 
 
 def test_harness_does_not_import_ui_or_launchpad():

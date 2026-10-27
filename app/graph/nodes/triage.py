@@ -32,6 +32,7 @@ def make_triage_node(deps: WorkflowDeps):
         ticket.is_ap = output.is_ap
         ticket.updated_at = datetime.now(UTC)
 
+        # only drop it when we're sure it's not AP
         discard = (
             not output.is_ap
             and output.confidence >= deps.settings.TRIAGE_DISCARD_MIN_CONFIDENCE
@@ -49,6 +50,7 @@ def make_triage_node(deps: WorkflowDeps):
                 "audit_metadata": {"is_ap": False},
             }
 
+        # AP, or not sure enough to throw away
         saved = deps.tickets.save_ticket(ticket)
         return {
             "should_stop": False,

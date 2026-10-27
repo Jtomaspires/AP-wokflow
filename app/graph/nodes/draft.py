@@ -23,38 +23,49 @@ def pick_target(
     is_overdue: bool,
     is_near_due: bool,
 ) -> DraftTarget | None:
+    # messy match — no auto draft
     if match_result in {
         InvoiceMatchResult.MULTIPLE,
         InvoiceMatchResult.TOO_MANY,
         InvoiceMatchResult.VAT_DISCREPANCY,
     }:
         return None
+    # nothing in SAP — ask invoicing
     if match_result is InvoiceMatchResult.NOT_FOUND:
         return DraftTarget.INVOICING
     if invoice is None:
         return None
     if invoice.stage is InvoiceStage.IN_APPROVAL:
+        # late and we know the approver — nudge them
         if (is_overdue or is_near_due) and invoice.approval_owner_email:
             return DraftTarget.APPROVAL_OWNERS
+        # late, nobody to mail
         if is_overdue and not invoice.approval_owner_email:
             return None
+        # still in approval, not urgent — reply to sender
         return DraftTarget.SENDER
     if invoice.stage is InvoiceStage.POSTED:
+        # blocked, or pending and late — payments
         if invoice.status is InvoiceStatus.BLOCKED or (
             is_overdue and invoice.status is InvoiceStatus.PENDING
         ):
             return DraftTarget.PAYMENTS
+        # pending / partial, not late yet
         if invoice.status in {InvoiceStatus.PENDING, InvoiceStatus.PARTIAL} and not is_overdue:
             return DraftTarget.SENDER
+        # paid + clearing doc — sender gets the proof
         if invoice.status is InvoiceStatus.PAID and invoice.clearing_document:
             return DraftTarget.SENDER
+        # paid but no proof — don't invent a reply
         if invoice.status is InvoiceStatus.PAID and not invoice.clearing_document:
             return None
         return DraftTarget.SENDER
+    # anything else — sender
     return DraftTarget.SENDER
 
 
 def _to_email(deps: WorkflowDeps, target: DraftTarget, ticket, invoice: Invoice | None) -> str:
+    # inbox follows the target; fallback is the original sender
     if target is DraftTarget.INVOICING:
         return deps.settings.INVOICING_EMAIL
     if target is DraftTarget.PAYMENTS:
@@ -83,6 +94,7 @@ def make_draft_node(deps: WorkflowDeps):
             is_overdue=is_overdue,
             is_near_due=is_near_due,
         )
+        # no safe target — skip the llm, hitl still runs
         if target is None:
             return {
                 "should_stop": False,
@@ -109,6 +121,7 @@ def make_draft_node(deps: WorkflowDeps):
         if not isinstance(output, DraftOutput):
             output = DraftOutput.model_validate(output)
 
+        # paid + clearing doc → attach the proof
         attach_proof = (
             invoice is not None
             and invoice.status is InvoiceStatus.PAID

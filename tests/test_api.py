@@ -186,6 +186,8 @@ async def test_approve_and_escalate_http(client):
     assert detail.status_code == 200
     assert detail.json()["status"] == "resolved"
     assert detail.json()["draft"]["edited_by_human"] is True
+    assert detail.json()["audit"]
+    assert all("created_at" in entry and "confidence" in entry for entry in detail.json()["audit"])
 
     esc_ticket = Ticket(
         thread_id=f"thread-esc-{uuid4().hex[:8]}",

@@ -13,6 +13,7 @@ from app.adapters.postgres_tickets import TicketRepo
 from app.api import auth
 from app.api.deps import build_workflow_deps
 from app.api.hitl import HitlConflictError, HitlService
+from app.api.nylas import router as nylas_router
 from app.api.tickets import ticket_detail, ticket_json
 from app.auth.dependencies import CurrentOperator
 from app.domain.enums import TicketStatus
@@ -29,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth.router)
+app.include_router(nylas_router)
 
 
 class ApproveBody(BaseModel):
@@ -61,7 +63,10 @@ def webhook_mock(payload: dict[str, Any]) -> dict[str, Any]:
 @app.get("/stats")
 def stats(operator: CurrentOperator) -> dict[str, int]:
     with Session(engine) as session:
-        return TicketRepo(session).count_by_status()
+        repo = TicketRepo(session)
+        counts = repo.count_by_status()
+        counts["hitl_overdue"] = repo.count_hitl_overdue()
+        return counts
 
 
 @app.get("/tickets")

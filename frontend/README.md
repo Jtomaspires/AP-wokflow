@@ -1,32 +1,33 @@
-# React + TypeScript + Vite
+# Operator console
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React + TypeScript console built with shadcn/ui. Operators sign in with the account stored by the backend; the session stays in an `HttpOnly` cookie. Naive UTC timestamps from the API are shown in the browser's local timezone.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+API must already be on port **8000** (see the [root README](../README.md)). Create an operator once from the repository root:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+python scripts/seed_operator.py --id op_joao --email joao@company.com --name "João"
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The script prompts for the password twice.
+
+```powershell
+copy .env.example .env
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and sign in. Keep both the UI and API on `localhost`; mixing it with `127.0.0.1` prevents the browser from sending the session cookie. `VITE_API_URL` must be `http://localhost:8000`.
+
+## Layout
+
+- **Header:** awaiting counter, API health, refresh, signed-in operator and sign out
+- **Status tiles:** counts from `GET /stats`; clicking one filters the feed
+- **Left:** ticket feed (`GET /tickets?status=`)
+- **Right:** tabbed email, invoice, draft and audit timeline
+- **Review & decide:** modal for editing, approving or escalating an `awaiting_human` ticket
+
+Approve is disabled when there is no draft or the API is down. Escalate is disabled while the API is down, and still works without a draft when health is ok. The review is stored under the signed-in operator id. A 401 on any route except `/auth/login` and `/auth/me` clears the local operator state; `RequireAuth` then sends the browser to `/login`.
+
+The draft tab shows `final_text` when a review edited the reply, otherwise `generated_text`. The audit tab is a timeline: each row has the node, action, confidence, and `created_at` from `GET /tickets/{id}`. When the ticket is awaiting a human, Draft opens first. Otherwise Audit opens first.

@@ -8,18 +8,22 @@ from typing import Any, TypedDict
 
 class LabState(TypedDict, total=False):
     raw_payload: dict[str, Any]
+    eval_date: str | None
     ticket_id: str | None
     should_stop: bool
     stop_reason: str | None
     route: str | None
+    routing_outcome: str
     skip_identity: bool
     is_thread_continuation: bool
     extracted_ref: str | None
     extracted_amount: float | None
+    extraction_confidence: float
     intent: str | None
     sender_id: str | None
     spf_pass: bool | None
     dkim_pass: bool | None
+    spf_dkim_penalty: float
     match_result: str | None
     match_method: str | None
     invoice_ref: str | None

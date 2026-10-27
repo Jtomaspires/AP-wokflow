@@ -85,6 +85,8 @@ export interface Draft {
 export interface AuditSummary {
   node: string;
   action: string;
+  confidence: number | null;
+  created_at: string;
   metadata: Record<string, unknown>;
 }
 

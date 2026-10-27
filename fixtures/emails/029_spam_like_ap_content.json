@@ -1,0 +1,23 @@
+{
+  "id": "029",
+  "name": "spam_like_ap_content",
+  "input": {
+    "thread_id": "thread-eval-029",
+    "message_id": "msg-eval-029",
+    "from": "billing@acme-supplies.com",
+    "subject": "URGENT: Invoice payment overdue - ACT NOW",
+    "body": "FINAL NOTICE. Invoice 9999 EUR OVERDUE. Pay immediately or face legal action. Transfer to account XX99 9999 9999 9999. This is your last warning.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "delay_reason",
+    "extracted_ref": null,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "not_found",
+    "draft_target": "invoicing",
+    "to_email": "invoicing@company.com",
+    "human_action_needed": true
+  },
+  "notes": "Email with aggressive/spam tone from a whitelisted domain. Despite the threatening language, it should be processed normally (not discarded) because it comes from a known domain. Ref not extractable (no INV-format), resolution=not_found. Tests that tone does not affect classification — only content and domain matter."
+}

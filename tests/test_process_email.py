@@ -15,8 +15,8 @@ def _payload(*, from_email: str, message_id: str) -> dict:
         "thread_id": f"thread-{message_id}",
         "message_id": message_id,
         "from": from_email,
-        "subject": "Invoice INV-2026-0001",
-        "body": "Please confirm payment status.",
+        "subject": f"Invoice INV-2026-0001 {message_id}",
+        "body": f"Please confirm payment status. {message_id}",
     }
 
 

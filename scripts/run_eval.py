@@ -24,6 +24,8 @@ def main() -> int:
     for row in report["results"]:
         mark = "ok" if row["workflow_ok"] else "FAIL"
         print(f"  {row['id']}: {mark}")
+        if not row["draft_judge"]:
+            print("    draft_judge: FAIL")
         if not row["workflow_ok"]:
             for name, passed in row["dimensions"].items():
                 if not passed:

@@ -17,6 +17,10 @@ class TicketStorePort(ABC):
         pass
 
     @abstractmethod
+    def get_by_content_hash(self, content_hash: str) -> Ticket | None:
+        pass
+
+    @abstractmethod
     def list_by_thread_id(self, thread_id: str) -> list[Ticket]:
         pass
 
@@ -35,4 +39,8 @@ class TicketStorePort(ABC):
 
     @abstractmethod
     def count_by_status(self) -> dict[str, int]:
+        pass
+
+    @abstractmethod
+    def count_hitl_overdue(self) -> int:
         pass

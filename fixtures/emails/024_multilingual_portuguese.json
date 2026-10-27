@@ -1,0 +1,30 @@
+{
+  "id": "024",
+  "name": "multilingual_portuguese",
+  "input": {
+    "thread_id": "thread-eval-024",
+    "message_id": "msg-eval-024",
+    "from": "billing@acme-supplies.com",
+    "subject": "Estado pagamento INV-2026-0001",
+    "body": "Bom dia, gostaríamos de saber o estado do pagamento da fatura INV-2026-0001 no valor de 1250 EUR. Aguardamos resposta.",
+    "received_at": "2026-09-04T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-0001",
+    "extracted_amount": 1250.0,
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "sender",
+    "to_email": "billing@acme-supplies.com",
+    "attach_payment_proof": false,
+    "human_action_needed": true,
+    "generated_text": "Thank you. We are reviewing invoice INV-2026-0001.",
+    "draft_checks": {
+      "required_tokens": ["INV-2026-0001"],
+      "forbidden_tokens": ["has been paid", "was paid"]
+    }
+  },
+  "notes": "Email em português. Testa se o LLM extrai ref e amount corretamente de linguagem não-inglesa. Caso real num sistema europeu. O draft continua em inglês (comportamento atual)."
+}

@@ -18,6 +18,7 @@ def make_sender_node(deps: WorkflowDeps):
         score = 0.0
         sender_id = None
         if found is not None:
+            # exact email — strong
             sender_id = found.id
             score = 0.9
         else:
@@ -25,6 +26,8 @@ def make_sender_node(deps: WorkflowDeps):
             if "@" in ticket.sender_email:
                 domain = ticket.sender_email.rsplit("@", 1)[-1]
             matches = deps.senders.get_by_domain(domain) if domain else []
+            # one company on that domain — weaker guess
+            # zero or many → unknown, still continue
             if len(matches) == 1:
                 sender_id = matches[0].id
                 score = 0.6

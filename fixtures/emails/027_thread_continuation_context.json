@@ -1,0 +1,24 @@
+{
+  "id": "027",
+  "name": "thread_continuation_context",
+  "input": {
+    "thread_id": "thread-eval-002",
+    "message_id": "msg-eval-027",
+    "from": "billing@acme-supplies.com",
+    "subject": "Re: Payment status INV-2026-0001",
+    "body": "Any update on this? Still waiting for confirmation.",
+    "received_at": "2026-09-10T10:00:00+00:00"
+  },
+  "expected": {
+    "is_ap": true,
+    "intent": "payment_status",
+    "extracted_ref": "INV-2026-0001",
+    "ticket_status": "awaiting_human",
+    "invoice_resolution": "match",
+    "draft_target": "approval_owners",
+    "to_email": "ap-owner@company.com",
+    "human_action_needed": true
+  },
+  "depends_on": "002",
+  "notes": "Reply in the same thread as fixture 002 (thread-eval-002). Body is minimal — 'Any update on this?' — but the guided model is handed INV-2026-0001. received_at 2026-09-10 is 5 days before due 2026-09-15, inside NEAR_DUE_DAYS (7), so the draft goes to the approval owner. The golden loop does not load fixture 002 first; thread context is covered by tests/test_node_thread.py."
+}
