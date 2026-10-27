@@ -55,7 +55,7 @@ async def test_whitelisted_ap_email_ends_awaiting_human():
             "extracted_amount": 1250.0,
         }
     )
-    llm.enqueue({"generated_text": "Thank you. We are reviewing the invoice."})
+    llm.enqueue({"generated_text": "Please review invoice INV-2026-0001. It is still in approval."})
     graph = build_graph(_deps(store, llm))
 
     final = await graph.ainvoke(

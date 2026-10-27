@@ -17,6 +17,7 @@
     "invoice_resolution": "match",
     "draft_target": "approval_owners",
     "to_email": "ap-owner@company.com",
+    "generated_text": "Please review invoice INV-2026-0001. It is near its due date and still in approval.",
     "human_action_needed": true
   },
   "depends_on": "002",

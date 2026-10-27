@@ -21,7 +21,7 @@ _DEFAULT_INTENT = {
     "extracted_amount": 1250.0,
 }
 _DEFAULT_DRAFT = {
-    "generated_text": "Thank you. We are reviewing invoice INV-2026-0001.",
+    "generated_text": "Please review invoice INV-2026-0001. It is still in approval.",
 }
 
 

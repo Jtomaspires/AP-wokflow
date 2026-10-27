@@ -20,14 +20,15 @@
     "to_email": "invoicing@company.com",
     "attach_payment_proof": false,
     "human_action_needed": true,
-    "generated_text": "Thank you. We are reviewing invoice INV-NOPE.",
+    "generated_text": "Please locate invoice INV-NOPE. We have no matching record.",
     "draft_checks": {
       "required_tokens": [
         "INV-NOPE"
       ],
       "forbidden_tokens": [
         "has been paid",
-        "was paid"
+        "was paid",
+        "thank"
       ]
     }
   }

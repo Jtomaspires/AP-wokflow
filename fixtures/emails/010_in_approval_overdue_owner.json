@@ -20,14 +20,15 @@
     "to_email": "ap-owner@company.com",
     "attach_payment_proof": false,
     "human_action_needed": true,
-    "generated_text": "Thank you. We are reviewing invoice INV-2026-OVERDUE.",
+    "generated_text": "Please chase invoice INV-2026-OVERDUE. It is past due and still in approval.",
     "draft_checks": {
       "required_tokens": [
         "INV-2026-OVERDUE"
       ],
       "forbidden_tokens": [
         "has been paid",
-        "was paid"
+        "was paid",
+        "thank"
       ]
     }
   }

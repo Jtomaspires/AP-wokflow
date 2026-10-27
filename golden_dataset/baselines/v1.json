@@ -23,7 +23,7 @@
         "to_email": "invoicing@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing invoice INV-NOPE."
+        "generated_text": "Please locate invoice INV-NOPE. We have no matching record."
       },
       "expected": {
         "intent": "payment_status",
@@ -327,7 +327,7 @@
         "to_email": "payments@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing invoice INV-2026-BLOCKED."
+        "generated_text": "Please look at invoice INV-2026-BLOCKED. It is blocked."
       },
       "expected": {
         "intent": "delay_reason",
@@ -366,7 +366,7 @@
         "to_email": "ap-owner@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing invoice INV-2026-OVERDUE."
+        "generated_text": "Please chase invoice INV-2026-OVERDUE. It is past due and still in approval."
       },
       "expected": {
         "intent": "delay_reason",
@@ -405,7 +405,7 @@
         "to_email": "invoicing@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Please review this request. We have no matching record on file."
       },
       "expected": {
         "intent": "unknown",
@@ -444,7 +444,7 @@
         "to_email": "invoicing@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Please review this request. We have no matching record on file."
       },
       "expected": {
         "intent": "payment_status",
@@ -861,7 +861,7 @@
         "to_email": "invoicing@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing your request."
+        "generated_text": "Please review this request. We have no matching record on file."
       },
       "expected": {
         "intent": "payment_status",
@@ -939,7 +939,7 @@
         "to_email": "billing@acme-supplies.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Eval draft."
+        "generated_text": "Thank you. We are reviewing invoice INV-2026-0001."
       },
       "expected": {
         "intent": "payment_status",
@@ -977,7 +977,7 @@
         "to_email": "ap-owner@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Thank you. We are reviewing invoice INV-2026-OVERDUE."
+        "generated_text": "Please chase invoice INV-2026-OVERDUE. It is past due and still in approval."
       },
       "expected": {
         "intent": "delay_reason",
@@ -1016,7 +1016,7 @@
         "to_email": "ap-owner@company.com",
         "attach_payment_proof": false,
         "human_action_needed": true,
-        "generated_text": "Eval draft."
+        "generated_text": "Please review invoice INV-2026-0001. It is near its due date and still in approval."
       },
       "expected": {
         "intent": "payment_status",

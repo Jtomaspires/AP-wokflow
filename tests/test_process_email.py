@@ -32,7 +32,7 @@ def test_process_email_sync_persists_awaiting_human_ap_ticket():
             "extracted_amount": 1250.0,
         }
     )
-    llm.enqueue({"generated_text": "Thank you. We are reviewing the invoice."})
+    llm.enqueue({"generated_text": "Please review invoice INV-2026-0001. It is still in approval."})
     message_id = f"msg-celery-ap-{uuid4().hex[:8]}"
 
     result = run_process_email(

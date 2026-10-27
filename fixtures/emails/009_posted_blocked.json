@@ -20,13 +20,14 @@
     "to_email": "payments@company.com",
     "attach_payment_proof": false,
     "human_action_needed": true,
-    "generated_text": "Thank you. We are reviewing invoice INV-2026-BLOCKED.",
+    "generated_text": "Please look at invoice INV-2026-BLOCKED. It is blocked.",
     "draft_checks": {
       "required_tokens": [
         "INV-2026-BLOCKED"
       ],
       "forbidden_tokens": [
-        "has been paid"
+        "has been paid",
+        "thank"
       ]
     }
   }

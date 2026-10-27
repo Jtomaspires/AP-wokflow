@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.domain.deps import WorkflowDeps
 from app.domain.enums import AuditAction, DraftTarget, InvoiceMatchResult, InvoiceStage, InvoiceStatus
 from app.domain.models import Invoice, ResponseDraft
+from app.graph.draft_guard import validate_draft
 from app.graph.nodes._ticket import load_ticket, missing_ticket
 from app.graph.state import LabState
 from app.llm.prompts import DRAFT_SYSTEM_PROMPT, build_draft_user_prompt
@@ -75,6 +76,17 @@ def _to_email(deps: WorkflowDeps, target: DraftTarget, ticket, invoice: Invoice 
     return ticket.sender_email
 
 
+async def _generate(deps: WorkflowDeps, user_prompt: str) -> DraftOutput:
+    output = await deps.llm.generate(
+        system_prompt=DRAFT_SYSTEM_PROMPT,
+        user_prompt=user_prompt,
+        output_schema=DraftOutput,
+    )
+    if not isinstance(output, DraftOutput):
+        return DraftOutput.model_validate(output)
+    return output
+
+
 def make_draft_node(deps: WorkflowDeps):
     async def draft(state: LabState) -> dict:
         ticket = load_ticket(deps, state)
@@ -106,20 +118,52 @@ def make_draft_node(deps: WorkflowDeps):
             }
 
         to_email = _to_email(deps, target, ticket, invoice)
-        output = await deps.llm.generate(
-            system_prompt=DRAFT_SYSTEM_PROMPT,
-            user_prompt=build_draft_user_prompt(
-                ticket=ticket,
-                invoice=invoice,
-                target=target,
-                to_email=to_email,
-                match_result=match_result,
-                intent=ticket.intent,
-            ),
-            output_schema=DraftOutput,
+        user_prompt = build_draft_user_prompt(
+            ticket=ticket,
+            invoice=invoice,
+            target=target,
+            to_email=to_email,
+            match_result=match_result,
+            intent=ticket.intent,
         )
-        if not isinstance(output, DraftOutput):
-            output = DraftOutput.model_validate(output)
+        output = await _generate(deps, user_prompt)
+        violations = validate_draft(
+            output.generated_text,
+            target=target,
+            invoice=invoice,
+            match_result=match_result,
+        )
+        retried = False
+        if violations:
+            # one rewrite, then drop it
+            retried = True
+            codes = ", ".join(violations)
+            output = await _generate(
+                deps,
+                user_prompt
+                + f"\nYour previous draft was rejected for: {codes}. Rewrite it and fix exactly these problems.",
+            )
+            violations = validate_draft(
+                output.generated_text,
+                target=target,
+                invoice=invoice,
+                match_result=match_result,
+            )
+            if violations:
+                return {
+                    "should_stop": False,
+                    "ticket_id": str(ticket.id),
+                    "skip_draft": True,
+                    "draft_id": None,
+                    "audit_action": AuditAction.DRAFT.value,
+                    "audit_metadata": {
+                        "skipped": True,
+                        "rejected": True,
+                        "violations": violations,
+                        "target": target.value,
+                        "match_result": match_result.value,
+                    },
+                }
 
         # paid + clearing doc → attach the proof
         attach_proof = (
@@ -138,13 +182,16 @@ def make_draft_node(deps: WorkflowDeps):
         )
         ticket.updated_at = datetime.now(UTC)
         deps.tickets.save_ticket(ticket)
+        metadata = {"target": target.value, "draft_id": str(saved.id)}
+        if retried:
+            metadata["retried"] = True
         return {
             "should_stop": False,
             "ticket_id": str(ticket.id),
             "skip_draft": False,
             "draft_id": str(saved.id),
             "audit_action": AuditAction.DRAFT.value,
-            "audit_metadata": {"target": target.value, "draft_id": str(saved.id)},
+            "audit_metadata": metadata,
         }
 
     return draft
